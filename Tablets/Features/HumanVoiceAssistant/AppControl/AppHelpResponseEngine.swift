@@ -1,30 +1,33 @@
 import Foundation
 
 final class AppHelpResponseEngine {
+    private let variations = ResponseVariationPool()
+
     func response(for intent: AppNavigationIntent) -> String {
         switch intent {
-        case .openDashboard: return "Opening your dashboard."
-        case .openMedicines: return "Here are your medicines."
-        case .openAddMedicine: return "Opening the add medicine screen."
-        case .openHealthTracking: return "Opening health tracking."
-        case .openSugarTracking: return "Opening sugar tracking."
-        case .openSugarLog: return "Let's record your sugar."
-        case .openBPTracking: return "Opening your blood pressure records."
-        case .openBPLog: return "Ready to record your blood pressure."
-        case .openPeriods: return "Opening your period tracker."
-        case .openAddPeriodLog: return "Opening period logging."
-        case .openCyclePrediction: return "Opening cycle prediction."
-        case .openDoctorVisit: return "Opening your doctor visit log."
-        case .openPrescriptionScanner: return "Opening the prescription scanner."
-        case .openFamilyCare: return "Opening family care."
-        case .openProfile: return "Opening profile."
-        case .openAmbientIntelligence: return "Opening ambient intelligence."
-        case .openHealthMemory: return "Opening health memory."
-        case .openMedicineReminder: return "Opening medicine reminder."
-        case .openDailyCheckIn: return "Opening daily check-in."
-        case .openHealthJourney: return "Here is your health journey."
-        case .openMore: return "Opening more options."
-        case .openSettings: return "Opening settings."
+        case .openDashboard: return variations.navigation(["Opening your dashboard.", "Taking you home.", "Here is your health overview."])
+        case .openMedicines: return variations.navigation(["Here are your medicines.", "Opening your medicine list.", "Taking you to your tablets."])
+        case .openAddMedicine: return variations.navigation(["Opening the add medicine screen.", "Let's add a medicine.", "Ready to add a new tablet."])
+        case .openHealthTracking: return variations.navigation(["Opening health tracking.", "Here are your health records.", "Taking you to your vitals."])
+        case .openSugarTracking: return variations.navigation(["Opening sugar tracking.", "Here are your sugar records.", "Taking you to diabetes tracking."])
+        case .openSugarLog: return variations.navigation(["Let's record your sugar.", "Opening sugar entry.", "Ready to add your sugar reading."])
+        case .openBPTracking: return variations.navigation(["Opening your blood pressure records.", "Here is your BP tracking.", "Taking you to pressure records."])
+        case .openBPLog: return variations.navigation(["Ready to record your blood pressure.", "Opening BP entry.", "Let's add your pressure reading."])
+        case .openPeriods: return variations.navigation(["Opening your period tracker.", "Taking you to women's health.", "Here is your cycle tracker."])
+        case .openAddPeriodLog: return variations.navigation(["Opening period logging.", "Ready to log your period.", "Opening cycle entry."])
+        case .openCyclePrediction: return variations.navigation(["Opening cycle prediction.", "Showing your estimated cycle view.", "Taking you to period estimates."])
+        case .openDoctorVisit: return variations.navigation(["Opening your doctor visit log.", "Taking you to doctor visits.", "Here are your appointment notes."])
+        case .openDoctorReport: return variations.navigation(["Opening your doctor report preview.", "Creating your doctor report screen.", "Taking you to the doctor PDF report."])
+        case .openPrescriptionScanner: return variations.navigation(["Opening the prescription scanner.", "Ready to scan your prescription.", "Opening the scanner."])
+        case .openFamilyCare: return variations.navigation(["Opening family care.", "Taking you to family care.", "Here are family profiles."])
+        case .openProfile: return variations.navigation(["Opening profile.", "Taking you to profile.", "Here are your profile settings."])
+        case .openAmbientIntelligence: return variations.navigation(["Opening ambient intelligence.", "Taking you to adaptive health mode.", "Here are your quiet insights."])
+        case .openHealthMemory: return variations.navigation(["Opening health memory.", "Taking you to health patterns.", "Here are your saved habit insights."])
+        case .openMedicineReminder: return variations.navigation(["Opening medicine reminder.", "Taking you to the reminder screen.", "Here is your medicine reminder."])
+        case .openDailyCheckIn: return variations.navigation(["Opening daily check-in.", "Let's check in for today.", "Taking you to your daily log."])
+        case .openHealthJourney: return variations.navigation(["Here is your health journey.", "Opening your wellness timeline.", "Taking you to your progress."])
+        case .openMore: return variations.navigation(["Opening more options.", "Here are more tools.", "Taking you to more."])
+        case .openSettings: return variations.navigation(["Opening settings.", "Taking you to settings.", "Here are your app preferences."])
         case .goBack: return "Okay, closing this."
         case .helpGeneral: return generalHelpResponse()
         case .helpWithFeature(let feature): return "I can help with \(feature). You can ask me to open it or explain it."
@@ -53,6 +56,7 @@ final class AppHelpResponseEngine {
         case .openAddPeriodLog: return "Period Log"
         case .openCyclePrediction: return "Cycle Prediction"
         case .openDoctorVisit: return "Doctor Visit"
+        case .openDoctorReport: return "Doctor Report"
         case .openPrescriptionScanner: return "Prescription Scanner"
         case .openFamilyCare: return "Family Care"
         case .openProfile: return "Profile"

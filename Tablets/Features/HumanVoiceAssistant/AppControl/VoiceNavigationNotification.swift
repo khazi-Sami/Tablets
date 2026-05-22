@@ -10,6 +10,7 @@ enum VoiceNavigationNotification {
     static let openAddPeriodLog = Notification.Name("VoiceOpenAddPeriodLog")
     static let openCyclePrediction = Notification.Name("VoiceOpenCyclePrediction")
     static let openDoctorVisit = Notification.Name("VoiceOpenDoctorVisit")
+    static let openDoctorReport = Notification.Name("VoiceOpenDoctorReport")
     static let openPrescriptionScanner = Notification.Name("VoiceOpenPrescriptionScanner")
     static let openFamilyCare = Notification.Name("VoiceOpenFamilyCare")
     static let openProfile = Notification.Name("VoiceOpenProfile")

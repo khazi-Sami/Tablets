@@ -1,124 +1,64 @@
-import Combine
 import Foundation
+import Observation
 
 @MainActor
-final class DashboardViewModel: ObservableObject {
-    let userName = "Sami"
+@Observable
+final class DashboardViewModel {
+    private(set) var dataProvider: DashboardDataProvider?
 
-    let nextMedicine = DashboardNextMedicine(
-        name: "Vitamin D",
-        dosage: "1000 IU",
-        instruction: "After breakfast",
-        time: "9:00 AM",
-        iconName: "pills.fill"
-    )
+    func configure(dataProvider: DashboardDataProvider) {
+        if self.dataProvider == nil {
+            self.dataProvider = dataProvider
+        }
+    }
 
-    let quickActions: [DashboardQuickAction] = [
-        DashboardQuickAction(title: "Add Medicine", systemImage: "plus.circle.fill", tint: .blue, kind: .addMedicine),
-        DashboardQuickAction(title: "Record BP", systemImage: "heart.text.square.fill", tint: .mint, kind: .recordBP),
-        DashboardQuickAction(title: "Record Sugar", systemImage: "drop.fill", tint: .lavender, kind: .recordSugar),
-        DashboardQuickAction(title: "View Trends", systemImage: "chart.xyaxis.line", tint: .blue, kind: .viewHealthTrends),
-        DashboardQuickAction(title: "Period Log", systemImage: "calendar.badge.plus", tint: .red, kind: .periodLog)
-    ]
+    func refresh() async {
+        await dataProvider?.refresh()
+    }
 
-    let timeline: [DashboardTimelineItem] = [
-        DashboardTimelineItem(time: "8:00 AM", title: "Omega 3", subtitle: "1 capsule with food", status: .taken),
-        DashboardTimelineItem(time: "9:00 AM", title: "Vitamin D", subtitle: "1000 IU after breakfast", status: .next),
-        DashboardTimelineItem(time: "2:00 PM", title: "Eye Drops", subtitle: "2 drops after lunch", status: .upcoming),
-        DashboardTimelineItem(time: "9:30 PM", title: "Magnesium", subtitle: "1 tablet before sleep", status: .upcoming)
-    ]
-
-    let healthSnapshots: [DashboardHealthSnapshot] = [
-        DashboardHealthSnapshot(title: "Blood Pressure", value: "120/80", unit: "mmHg", systemImage: "heart.text.square.fill", status: "Normal"),
-        DashboardHealthSnapshot(title: "Sugar", value: "96", unit: "mg/dL", systemImage: "drop.fill", status: "Stable"),
-        DashboardHealthSnapshot(title: "Pulse", value: "72", unit: "bpm", systemImage: "waveform.path.ecg", status: "Calm")
-    ]
-
-    let lowStock = DashboardLowStockMedicine(name: "Omega 3", remaining: 4, threshold: 5)
-
-    var medicineProgress: Double {
-        0.62
+    var userName: String {
+        UserHealthProfile.userName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var title: String {
         let hour = Calendar.current.component(.hour, from: .now)
-
         switch hour {
-        case 5..<12:
-            return "Good morning"
-        case 12..<17:
-            return "Good afternoon"
-        default:
-            return "Good evening"
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        default: return "Good evening"
         }
     }
 
-    func upcomingDoseText(for medicine: Medicine) -> String {
-        guard let firstTime = medicine.times.first else {
-            return "No reminder set"
+    var greetingText: String {
+        userName.isEmpty ? title : "\(title), \(userName)"
+    }
+
+    var statusLine: String {
+        guard let dataProvider else { return "Loading your care plan..." }
+        if dataProvider.todayMedicineLogs.isEmpty {
+            if let bp = dataProvider.latestBP {
+                return "No medicines scheduled today · Last BP: \(bpDisplay(bp))"
+            }
+            if dataProvider.latestSugar == nil {
+                return "Sugar not logged today"
+            }
+            return "No medicines scheduled today"
         }
 
-        return "Next dose \(firstTime.shortTimeText)"
-    }
-}
+        if dataProvider.pendingCountToday == 0 {
+            return "All medicines taken today"
+        }
 
-struct DashboardNextMedicine {
-    let name: String
-    let dosage: String
-    let instruction: String
-    let time: String
-    let iconName: String
-}
-
-struct DashboardQuickAction: Identifiable {
-    enum Kind {
-        case addMedicine
-        case recordBP
-        case recordSugar
-        case periodLog
-        case viewHealthTrends
+        var parts = ["\(dataProvider.pendingCountToday) medicines pending"]
+        if let bp = dataProvider.latestBP {
+            parts.append("Last BP: \(bpDisplay(bp))")
+        } else if dataProvider.latestSugar == nil {
+            parts.append("Sugar not logged today")
+        }
+        return parts.joined(separator: " · ")
     }
 
-    enum Tint {
-        case blue
-        case mint
-        case lavender
-        case red
+    private func bpDisplay(_ record: HealthRecord) -> String {
+        "\(Int(record.value1))/\(Int(record.value2 ?? 0))"
     }
-
-    let id = UUID()
-    let title: String
-    let systemImage: String
-    let tint: Tint
-    let kind: Kind
-}
-
-struct DashboardTimelineItem: Identifiable {
-    enum Status {
-        case taken
-        case next
-        case upcoming
-        case missed
-    }
-
-    let id = UUID()
-    let time: String
-    let title: String
-    let subtitle: String
-    let status: Status
-}
-
-struct DashboardHealthSnapshot: Identifiable {
-    let id = UUID()
-    let title: String
-    let value: String
-    let unit: String
-    let systemImage: String
-    let status: String
-}
-
-struct DashboardLowStockMedicine {
-    let name: String
-    let remaining: Int
-    let threshold: Int
 }

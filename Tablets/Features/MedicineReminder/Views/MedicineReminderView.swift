@@ -4,7 +4,8 @@ import SwiftUI
 struct MedicineReminderView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var viewModel = MedicineReminderViewModel()
+    @State private var viewModel = MedicineReminderViewModel()
+    @State private var isEditingMedicine = false
 
     let medicine: Medicine?
 
@@ -20,58 +21,81 @@ struct MedicineReminderView: View {
             BreathingGlowView(color: backgroundAccent)
                 .offset(y: -130)
 
-            VStack(spacing: Spacing.large) {
-                topBar
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: Spacing.medium) {
+                    topBar
 
-                Spacer(minLength: Spacing.medium)
-
-                FloatingMedicineAnimationView(
-                    medicineType: medicineType,
-                    isHeartMedicine: isHeartMedicine
-                )
-                .frame(height: 250)
-
-                VStack(spacing: Spacing.small) {
-                    Text(timeMessage)
-                        .font(AppFont.caption)
-                        .foregroundStyle(secondaryText)
-
-                    Text("Time for \(medicineName)")
-                        .font(AppFont.display)
-                        .foregroundStyle(primaryText)
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.8)
-
-                    Text(dosageText)
-                        .font(AppFont.title)
-                        .foregroundStyle(accentText)
-
-                    Text(viewModel.caringMessage)
-                        .font(AppFont.body)
-                        .foregroundStyle(secondaryText)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, Spacing.medium)
-                }
-
-                ReminderVoiceButton(isSpeaking: viewModel.isSpeaking) {
-                    viewModel.speakReminder(
-                        medicineName: medicineName,
-                        dosage: dosageText,
-                        instruction: instructionText
+                    FloatingMedicineAnimationView(
+                        medicineType: medicineType,
+                        isHeartMedicine: isHeartMedicine
                     )
+                    .frame(height: 160)
+                    .padding(.top, Spacing.small)
+
+                    VStack(spacing: Spacing.small) {
+                        Text(timeMessage)
+                            .font(AppFont.caption)
+                            .foregroundStyle(secondaryText)
+
+                        Text("Time for \(medicineName)")
+                            .font(AppFont.title)
+                            .foregroundStyle(primaryText)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.78)
+
+                        Text(dosageText)
+                            .font(AppFont.sectionTitle)
+                            .foregroundStyle(accentText)
+
+                        Text(viewModel.caringMessage)
+                            .font(AppFont.body)
+                            .foregroundStyle(secondaryText)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, Spacing.small)
+                    }
+
+                    ReminderVoiceButton(isSpeaking: viewModel.isSpeaking) {
+                        viewModel.speakReminder(
+                            medicineName: medicineName,
+                            dosage: dosageText,
+                            instruction: instructionText
+                        )
+                    }
+
+                    if let medicine {
+                        AdaptiveReminderToggleCard(medicine: medicine)
+                    }
+
+                    if viewModel.didTakeMedicine {
+                        ReminderSuccessAnimationView()
+                            .transition(.scale.combined(with: .opacity))
+                    }
+
+                    Color.clear.frame(height: 150)
                 }
-
-                Spacer(minLength: Spacing.small)
-
-                if viewModel.didTakeMedicine {
-                    ReminderSuccessAnimationView()
-                        .transition(.scale.combined(with: .opacity))
-                }
-
-                reminderActions
+                .padding(Spacing.medium)
             }
-            .padding(Spacing.medium)
+        }
+        .safeAreaInset(edge: .bottom) {
+            reminderActions
+                .padding(Spacing.medium)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            AppColor.warmWhite.opacity(isNight ? 0.04 : 0.20),
+                            AppColor.warmWhite.opacity(isNight ? 0.18 : 0.92)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea(edges: .bottom)
+                )
+        }
+        .sheet(isPresented: $isEditingMedicine) {
+            if let medicine {
+                EditMedicineView(medicine: medicine)
+            }
         }
         .animation(.spring(response: 0.55, dampingFraction: 0.82), value: viewModel.didTakeMedicine)
         .onDisappear {
@@ -91,6 +115,21 @@ struct MedicineReminderView: View {
             }
 
             Spacer()
+
+            if medicine != nil {
+                Button {
+                    HapticsManager.selection()
+                    isEditingMedicine = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(primaryText)
+                        .frame(width: 44, height: 44)
+                        .background(.white.opacity(isNight ? 0.12 : 0.62))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Edit medicine")
+            }
 
             Button {
                 HapticsManager.selection()

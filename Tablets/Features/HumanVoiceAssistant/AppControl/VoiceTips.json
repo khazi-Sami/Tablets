@@ -1,0 +1,102 @@
+[
+  {
+    "id": "tip_001",
+    "text": "Tip: Say 'How is my BP this week' to get a 7-day summary."
+  },
+  {
+    "id": "tip_002",
+    "text": "Tip: Say 'My BP is 120 over 80' to save a pressure reading."
+  },
+  {
+    "id": "tip_003",
+    "text": "Tip: Say 'My sugar is 145 after food' to log sugar quickly."
+  },
+  {
+    "id": "tip_004",
+    "text": "Tip: Say 'Open medicines' to see your tablet list."
+  },
+  {
+    "id": "tip_005",
+    "text": "Tip: Say 'Add medicine' when you get a new prescription."
+  },
+  {
+    "id": "tip_006",
+    "text": "Tip: Say 'What medicine is pending?' to check today's doses."
+  },
+  {
+    "id": "tip_007",
+    "text": "Tip: Say 'Did I take my tablet?' to ask about medicine status."
+  },
+  {
+    "id": "tip_008",
+    "text": "Tip: Say 'Open periods' to go to women's health tracking."
+  },
+  {
+    "id": "tip_009",
+    "text": "Tip: Say 'My period started today' to log a period start."
+  },
+  {
+    "id": "tip_010",
+    "text": "Tip: Say 'When was my last period?' to check saved logs."
+  },
+  {
+    "id": "tip_011",
+    "text": "Tip: Say 'Scan prescription' to open the prescription scanner."
+  },
+  {
+    "id": "tip_012",
+    "text": "Tip: Say 'Open doctor visit' to prepare a doctor summary."
+  },
+  {
+    "id": "tip_013",
+    "text": "Tip: Say 'Health summary' to hear a short saved-log overview."
+  },
+  {
+    "id": "tip_014",
+    "text": "Tip: Say 'Open family care' to manage family medicines."
+  },
+  {
+    "id": "tip_015",
+    "text": "Tip: Say 'Family medicines' to jump to family care."
+  },
+  {
+    "id": "tip_016",
+    "text": "Tip: Say 'Open settings' to change app preferences."
+  },
+  {
+    "id": "tip_017",
+    "text": "Tip: Say 'Health journey' to open your progress timeline."
+  },
+  {
+    "id": "tip_018",
+    "text": "Tip: Say 'Check-in today' to open the daily wellness check-in."
+  },
+  {
+    "id": "tip_019",
+    "text": "Tip: You can say 'sar dard hai' to log headache."
+  },
+  {
+    "id": "tip_020",
+    "text": "Tip: You can say 'tension kaisa hai' to ask about BP."
+  },
+  {
+    "id": "tip_021",
+    "text": "Tip: You can say 'goli kaunsa lena hai' to ask medicine timing."
+  },
+  {
+    "id": "tip_022",
+    "text": "Tip: Say 'How was my week?' for a gentle health recap."
+  },
+  {
+    "id": "tip_023",
+    "text": "Tip: Say 'Doctor visit' before an appointment."
+  },
+  {
+    "id": "tip_024",
+    "text": "Tip: Say 'Medicine schedule' to ask about upcoming tablets."
+  },
+  {
+    "id": "tip_025",
+    "text": "Tip: Say 'Help' anytime to hear what I can do."
+  }
+]

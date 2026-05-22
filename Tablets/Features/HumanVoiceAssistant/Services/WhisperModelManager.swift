@@ -54,6 +54,14 @@ final class WhisperModelManager: ObservableObject {
         return false
     }
 
+    var isModelLoaded: Bool {
+        #if canImport(WhisperKit)
+        loadedWhisperKit != nil && loadedModelName == selectedModel.modelName
+        #else
+        false
+        #endif
+    }
+
     var storageUsageText: String {
         let bytes = availableModels
             .compactMap { localModelFolder(for: $0) }

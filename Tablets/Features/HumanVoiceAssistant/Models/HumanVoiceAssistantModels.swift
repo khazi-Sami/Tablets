@@ -89,6 +89,36 @@ final class HumanVoiceMemory {
     }
 }
 
+@Model
+final class CustomVoiceShortcut {
+    @Attribute(.unique) var id: UUID
+    var triggerPhrase: String
+    var responseText: String
+    var actionType: String
+    var navigationTarget: String?
+    var isEnabled: Bool
+    var createdAt: Date
+    var lastTriggeredAt: Date?
+    var triggerCount: Int
+
+    init(
+        triggerPhrase: String,
+        responseText: String,
+        actionType: String = "speak",
+        navigationTarget: String? = nil
+    ) {
+        self.id = UUID()
+        self.triggerPhrase = triggerPhrase
+        self.responseText = responseText
+        self.actionType = actionType
+        self.navigationTarget = navigationTarget
+        self.isEnabled = true
+        self.createdAt = Date()
+        self.lastTriggeredAt = nil
+        self.triggerCount = 0
+    }
+}
+
 enum HumanVoiceMemoryType: String, Codable, CaseIterable, Identifiable {
     case habit
     case frequentMedicineTime
@@ -101,6 +131,7 @@ enum HumanVoiceMemoryType: String, Codable, CaseIterable, Identifiable {
 enum HealthVoiceIntent: String, Codable, CaseIterable, Identifiable {
     case logSugar
     case logBloodPressure
+    case logWeight
     case askSugar
     case askBloodPressure
     case askMedicineTaken

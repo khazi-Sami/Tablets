@@ -1,11 +1,13 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct AddMedicineView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = AddMedicineViewModel()
     @FocusState private var focusedField: Field?
+    @State private var showAdvancedOptions = false
 
     private let typeColumns = [
         GridItem(.flexible(), spacing: Spacing.small),
@@ -23,15 +25,11 @@ struct AddMedicineView: View {
 
                             inputSection
 
-                            medicineTypeSection
+                            scheduleSection
 
                             instructionSection
 
-                            scheduleSection
-
-                            stockSection
-
-                            notesSection
+                            advancedSection
 
                             Color.clear.frame(height: 98)
                         }
@@ -82,7 +80,7 @@ struct AddMedicineView: View {
                         .font(AppFont.title)
                         .foregroundStyle(AppColor.ink)
 
-                    Text("Set reminders, food timing, and stock alerts in one place.")
+                    Text("Add the basics now. You can open advanced options only if you need them.")
                         .font(AppFont.body)
                         .foregroundStyle(AppColor.secondaryInk)
                         .fixedSize(horizontal: false, vertical: true)
@@ -135,56 +133,108 @@ struct AddMedicineView: View {
                     selection: $viewModel.instruction,
                     values: MedicineInstruction.allCases
                 ) { $0.title }
-
-                PickerChipGroup(
-                    selection: $viewModel.frequencyType,
-                    values: MedicineFrequencyType.allCases
-                ) { $0.title }
             }
         }
     }
 
     private var scheduleSection: some View {
-        AddMedicineSection(title: "Reminder schedule") {
+        AddMedicineSection(title: "Reminder time") {
             VStack(spacing: Spacing.small) {
-                ThemedDateRow(
-                    title: "Reminder time",
-                    systemImage: "clock.fill"
-                ) {
-                    DatePicker("", selection: $viewModel.reminderTime, displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                }
-
-                ThemedDateRow(
-                    title: "Start date",
-                    systemImage: "calendar"
-                ) {
-                    DatePicker("", selection: $viewModel.startDate, displayedComponents: .date)
-                        .labelsHidden()
-                }
-
-                Toggle(isOn: $viewModel.hasEndDate.animation(.spring(response: 0.32, dampingFraction: 0.84))) {
-                    Label("Set end date", systemImage: "calendar.badge.clock")
-                        .font(AppFont.bodyStrong)
-                        .foregroundStyle(AppColor.ink)
-                }
-                .tint(AppColor.medicalBlue)
-                .padding(Spacing.medium)
-                .background(AppColor.cream.opacity(0.82))
-                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
-
-                if viewModel.hasEndDate {
+                ForEach(viewModel.reminderTimes.indices, id: \.self) { index in
                     ThemedDateRow(
-                        title: "End date",
-                        systemImage: "calendar.badge.checkmark"
+                        title: index == 0 ? "Reminder time" : "Reminder \(index + 1)",
+                        systemImage: "clock.fill"
                     ) {
-                        DatePicker("", selection: $viewModel.endDate, displayedComponents: .date)
-                            .labelsHidden()
+                        HStack(spacing: Spacing.xSmall) {
+                            DatePicker("", selection: $viewModel.reminderTimes[index], displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+
+                            if viewModel.reminderTimes.count > 1 {
+                                Button {
+                                    viewModel.removeReminderTime(at: IndexSet(integer: index))
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(AppColor.softRed)
+                                        .frame(width: 44, height: 44)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
-                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
+
+                Button {
+                    viewModel.addReminderTime()
+                } label: {
+                    Label("Add another time", systemImage: "plus.circle.fill")
+                        .font(AppFont.bodyStrong)
+                        .foregroundStyle(AppColor.medicalBlueDeep)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(AppColor.medicalBlue.opacity(0.10))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private var advancedSection: some View {
+        DisclosureGroup(isExpanded: $showAdvancedOptions) {
+            VStack(spacing: Spacing.large) {
+                medicineTypeSection
+
+                AddMedicineSection(title: "Frequency") {
+                    PickerChipGroup(
+                        selection: $viewModel.frequencyType,
+                        values: MedicineFrequencyType.allCases
+                    ) { $0.title }
+                }
+
+                AddMedicineSection(title: "Dates") {
+                    VStack(spacing: Spacing.small) {
+                        ThemedDateRow(
+                            title: "Start date",
+                            systemImage: "calendar"
+                        ) {
+                            DatePicker("", selection: $viewModel.startDate, displayedComponents: .date)
+                                .labelsHidden()
+                        }
+
+                        Toggle(isOn: $viewModel.hasEndDate.animation(.spring(response: 0.32, dampingFraction: 0.84))) {
+                            Label("Set end date", systemImage: "calendar.badge.clock")
+                                .font(AppFont.bodyStrong)
+                                .foregroundStyle(AppColor.ink)
+                        }
+                        .tint(AppColor.medicalBlue)
+                        .padding(Spacing.medium)
+                        .background(AppColor.cream.opacity(0.82))
+                        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
+
+                        if viewModel.hasEndDate {
+                            ThemedDateRow(
+                                title: "End date",
+                                systemImage: "calendar.badge.checkmark"
+                            ) {
+                                DatePicker("", selection: $viewModel.endDate, displayedComponents: .date)
+                                    .labelsHidden()
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
+                }
+
+                stockSection
+                notesSection
+            }
+            .padding(.top, Spacing.small)
+        } label: {
+            Label("Advanced options", systemImage: "slider.horizontal.3")
+                .font(AppFont.sectionTitle)
+                .foregroundStyle(AppColor.ink)
+        }
+        .padding(Spacing.medium)
+        .background(AppColor.warmWhite.opacity(0.82))
+        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
     }
 
     private var stockSection: some View {
@@ -230,12 +280,39 @@ struct AddMedicineView: View {
 
     private var saveBar: some View {
         VStack(spacing: Spacing.xSmall) {
+            if let notificationMessage = viewModel.notificationMessage {
+                HStack(spacing: Spacing.xSmall) {
+                    Image(systemName: "bell.slash.fill")
+                    Text(notificationMessage)
+                        .lineLimit(2)
+                    Button("Settings") {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    }
+                    .font(AppFont.badge)
+                }
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.secondaryInk)
+                .padding(.horizontal, Spacing.small)
+            }
+
             CapsuleButton("Save Medicine", systemImage: "checkmark.circle.fill") {
                 focusedField = nil
 
-                if viewModel.save(modelContext: modelContext) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
-                        dismiss()
+                if let medicine = viewModel.saveMedicine(modelContext: modelContext) {
+                    Task {
+                        let scheduled = await MedicineNotificationScheduler().scheduleNotifications(for: medicine)
+                        if !scheduled {
+                            viewModel.notificationMessage = "Notifications are off. Turn them on to receive medicine reminders."
+                            return
+                        }
+                        let engine = AdaptiveReminderEngine(modelContext: modelContext)
+                        let scheduler = AdaptiveReminderScheduler(engine: engine, modelContext: modelContext)
+                        _ = await scheduler.applyAdaptiveShifts()
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
+                            dismiss()
+                        }
                     }
                 }
             }

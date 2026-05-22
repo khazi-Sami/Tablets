@@ -1,6 +1,6 @@
 import Foundation
 
-struct AdaptiveReminderEngine {
+struct AmbientAdaptiveReminderEngine {
     func recommendation(from signals: [AmbientHabitSignal], elderlyMode: Bool) -> String {
         if elderlyMode {
             return "Use larger controls and one clear action per reminder."

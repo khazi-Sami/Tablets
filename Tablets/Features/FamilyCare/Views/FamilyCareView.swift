@@ -18,6 +18,11 @@ struct FamilyCareView: View {
                         }
 
                         if members.isEmpty {
+                            VoiceCoachingCard(
+                                message: "No family members added yet.",
+                                command: "Open family care"
+                            )
+
                             EmptyStateView(
                                 title: "Your care circle is empty",
                                 message: "Add family members and gently monitor medicine routines together.",

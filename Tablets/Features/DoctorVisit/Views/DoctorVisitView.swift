@@ -31,6 +31,13 @@ struct DoctorVisitView: View {
                         VStack(alignment: .leading, spacing: Spacing.large) {
                             hero(summary: summary)
 
+                            if appointments.isEmpty {
+                                VoiceCoachingCard(
+                                    message: "No doctor visits saved yet.",
+                                    command: "Open doctor visit"
+                                )
+                            }
+
                             rangePicker
 
                             LazyVGrid(columns: columns, spacing: Spacing.small) {
@@ -53,6 +60,13 @@ struct DoctorVisitView: View {
                             CapsuleButton("Generate PDF Report", systemImage: "doc.richtext.fill", isLoading: viewModel.isGenerating) {
                                 viewModel.generatePDF(summary: summary, appointment: appointments.first)
                             }
+
+                            NavigationLink {
+                                DoctorReportPreviewView()
+                            } label: {
+                                CapsuleButton("Open Professional Report Preview", systemImage: "doc.text.magnifyingglass", style: .secondary) {}
+                            }
+                            .buttonStyle(.plain)
 
                             if let url = viewModel.generatedPDFURL {
                                 pdfActions(url)

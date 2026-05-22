@@ -38,14 +38,20 @@ final class VoiceSessionManager: ObservableObject {
     private let parser: HealthIntentParser
     private let semanticRouter: SemanticIntentRouting
     private let healthQueryEngine: HealthQueryAnswering
+    private let medicineVoiceQueryEngine: MedicineVoiceQueryAnswering
     private let knowledgeBase: AppKnowledgeBase
     private let helpEngine: AppHelpResponseEngine
+    private let healthKitVoiceQueryHandler: HealthKitVoiceQueryHandler
     private let responseEngine: ResponseEngine
     private let ttsService: TTSServiceProtocol
     private let modelContext: ModelContext
     private let preferencesProvider: () -> HumanAssistantPreference?
+    private let customShortcutMatcher: CustomShortcutMatching
+    private let hinglishNormalizer = HinglishNormalizer()
+    private let conversationContext: ConversationContext
     private var actionExecutor: AppVoiceActionExecutor?
     private var pendingIntent: AppNavigationIntent?
+    private var pendingCustomShortcut: CustomVoiceShortcut?
     private var awaitingConfirmation = false
     private var confirmationStartedAt: Date?
 
@@ -56,8 +62,12 @@ final class VoiceSessionManager: ObservableObject {
         parser: HealthIntentParser? = nil,
         semanticRouter: SemanticIntentRouting? = nil,
         healthQueryEngine: HealthQueryAnswering? = nil,
+        medicineVoiceQueryEngine: MedicineVoiceQueryAnswering? = nil,
+        healthKitVoiceQueryHandler: HealthKitVoiceQueryHandler? = nil,
         knowledgeBase: AppKnowledgeBase? = nil,
-        helpEngine: AppHelpResponseEngine? = nil
+        helpEngine: AppHelpResponseEngine? = nil,
+        customShortcutMatcher: CustomShortcutMatching? = nil,
+        conversationContext: ConversationContext? = nil
     ) {
         self.modelContext = modelContext
         self.ttsService = ttsService
@@ -65,9 +75,13 @@ final class VoiceSessionManager: ObservableObject {
         self.parser = parser ?? HealthIntentParser()
         self.semanticRouter = semanticRouter ?? SemanticIntentRouter()
         self.healthQueryEngine = healthQueryEngine ?? HealthQueryEngine()
+        self.medicineVoiceQueryEngine = medicineVoiceQueryEngine ?? MedicineVoiceQueryEngine()
+        self.healthKitVoiceQueryHandler = healthKitVoiceQueryHandler ?? HealthKitVoiceQueryHandler()
         self.knowledgeBase = knowledgeBase ?? AppKnowledgeBase()
         self.helpEngine = helpEngine ?? AppHelpResponseEngine()
+        self.customShortcutMatcher = customShortcutMatcher ?? CustomShortcutMatcher()
         self.responseEngine = ResponseEngine(modelContext: modelContext)
+        self.conversationContext = conversationContext ?? ConversationContext()
         self.suggestedFeatureCards = Array(self.knowledgeBase.topSuggestions().prefix(3))
     }
 
@@ -81,37 +95,57 @@ final class VoiceSessionManager: ObservableObject {
         guard !cleaned.isEmpty else {
             return await respond("I did not hear anything clearly. Please try again.", userText: transcript, intent: .unknown, confidence: 0.2, category: .error, shouldAutoDismiss: false)
         }
+        let normalizedTranscript = hinglishNormalizer.normalize(cleaned)
+        let resolvedTranscript = conversationContext.resolve(normalizedTranscript)
+        let command = parser.parse(resolvedTranscript)
 
-        if await handlePendingConfirmation(cleaned) {
+        if CustomShortcutSafety.isDirectHealthLoggingCandidate(resolvedTranscript), isDirectHealthCommand(command) {
+            return await rememberAndRespond(to: command, userText: cleaned)
+        }
+
+        if await handlePendingConfirmation(resolvedTranscript) {
             return VoiceSessionResult(transcript: cleaned, response: lastAssistantResponse, category: .navigation, shouldAutoDismiss: true)
         }
 
-        let command = parser.parse(cleaned)
-        if isDirectHealthCommand(command) {
-            SwiftDataHealthMemoryService(modelContext: modelContext).remember(command)
-            HealthMemoryHabitLearningEngine(modelContext: modelContext).learn(
-                command: command,
-                medicines: fetchMedicines(),
-                medicineLogs: fetchMedicineLogs(),
-                healthRecords: fetchHealthRecords(),
-                dailyLogs: fetchSymptomLogs(),
-                interactions: fetchInteractions()
-            )
-            let response = responseEngine.respond(
-                to: command,
-                medicines: fetchMedicines(),
-                medicineLogs: fetchMedicineLogs(),
-                healthRecords: fetchHealthRecords(),
-                symptomLogs: fetchSymptomLogs()
-            )
-            return await respond(response.text, userText: cleaned, intent: command.intent, confidence: command.confidence, category: .healthLogging, shouldAutoDismiss: true)
+        if CustomShortcutSafety.isHealthQuestionCandidate(resolvedTranscript),
+           let queryAnswer = await healthQueryEngine.answer(resolvedTranscript, modelContext: modelContext) {
+            return await respond(queryAnswer, userText: cleaned, intent: command.intent, confidence: 0.86, category: .healthQuery, shouldAutoDismiss: false)
         }
 
-        if let queryAnswer = await healthQueryEngine.answer(cleaned, modelContext: modelContext) {
+        if let shortcutMatch = await customShortcutMatcher.match(resolvedTranscript, context: modelContext) {
+            if shortcutMatch.needsConfirmation {
+                return await askToConfirmCustomShortcut(shortcutMatch.shortcut, userText: cleaned)
+            }
+            return await executeCustomShortcut(shortcutMatch.shortcut, userText: cleaned)
+        }
+
+        if let medicineAnswer = await medicineVoiceQueryEngine.answer(resolvedTranscript, modelContext: modelContext) {
+            if medicineAnswer.shouldNavigateToWidget, let actionExecutor {
+                _ = await actionExecutor.execute(.openDashboard)
+            }
+            return await respond(
+                medicineAnswer.response,
+                userText: cleaned,
+                intent: medicineAnswer.handledAction ? .medicineTaken : .askMedicineTaken,
+                confidence: 0.86,
+                category: medicineAnswer.handledAction ? .healthLogging : .healthQuery,
+                shouldAutoDismiss: medicineAnswer.handledAction || medicineAnswer.shouldNavigateToWidget
+            )
+        }
+
+        if isDirectHealthCommand(command) {
+            return await rememberAndRespond(to: command, userText: cleaned)
+        }
+
+        if let queryAnswer = await healthQueryEngine.answer(resolvedTranscript, modelContext: modelContext) {
             return await respond(queryAnswer, userText: cleaned, intent: command.intent, confidence: 0.82, category: .healthQuery, shouldAutoDismiss: false)
         }
 
-        let route = await semanticRouter.route(cleaned)
+        if let healthKitAnswer = await healthKitVoiceQueryHandler.answer(resolvedTranscript) {
+            return await respond(healthKitAnswer, userText: cleaned, intent: command.intent, confidence: 0.82, category: .healthQuery, shouldAutoDismiss: false)
+        }
+
+        let route = await semanticRouter.route(resolvedTranscript)
         if route.intent != .unknown {
             lastRecognizedIntent = route.intent.id
             navigationDestinationPreview = route.intent.id
@@ -125,7 +159,7 @@ final class VoiceSessionManager: ObservableObject {
             }
         }
 
-        if let feature = knowledgeBase.search(cleaned) {
+        if let feature = knowledgeBase.search(resolvedTranscript) {
             suggestedFeatureCards = [feature]
             pendingIntent = feature.navigationIntent
             awaitingConfirmation = true
@@ -140,7 +174,7 @@ final class VoiceSessionManager: ObservableObject {
     }
 
     private func handlePendingConfirmation(_ transcript: String) async -> Bool {
-        guard awaitingConfirmation, let pendingIntent else { return false }
+        guard awaitingConfirmation, pendingIntent != nil || pendingCustomShortcut != nil else { return false }
 
         if let started = confirmationStartedAt, Date().timeIntervalSince(started) > 15 {
             clearPendingConfirmation()
@@ -149,6 +183,17 @@ final class VoiceSessionManager: ObservableObject {
 
         let normalized = transcript.lowercased()
         if containsAny(normalized, ["yes", "yeah", "sure", "ok", "okay", "open it", "go ahead", "continue"]) {
+            if let pendingCustomShortcut {
+                clearPendingConfirmation(keepCustomShortcut: true)
+                _ = await executeCustomShortcut(pendingCustomShortcut, userText: transcript)
+                clearPendingConfirmation()
+                return true
+            }
+
+            guard let pendingIntent else {
+                clearPendingConfirmation()
+                return false
+            }
             clearPendingConfirmation(keepIntent: true)
             _ = await execute(pendingIntent, userText: transcript, confidence: 0.72)
             return true
@@ -191,10 +236,43 @@ final class VoiceSessionManager: ObservableObject {
         return await respond(pendingConfirmationText, userText: userText, intent: .unknown, confidence: 0.62, category: .help, shouldAutoDismiss: false)
     }
 
+    private func askToConfirmCustomShortcut(_ shortcut: CustomVoiceShortcut, userText: String) async -> VoiceSessionResult {
+        pendingCustomShortcut = shortcut
+        awaitingConfirmation = true
+        confirmationStartedAt = .now
+        pendingConfirmationText = "Did you mean your custom shortcut: \(shortcut.triggerPhrase)?"
+        return await respond(pendingConfirmationText, userText: userText, intent: .unknown, confidence: 0.62, category: .help, shouldAutoDismiss: false)
+    }
+
+    private func executeCustomShortcut(_ shortcut: CustomVoiceShortcut, userText: String) async -> VoiceSessionResult {
+        shortcut.triggerCount += 1
+        shortcut.lastTriggeredAt = .now
+        try? modelContext.save()
+
+        if shortcut.actionType == "navigate",
+           let navigationTarget = shortcut.navigationTarget,
+           CustomShortcutSafety.safeNavigationIntentIds.contains(navigationTarget) {
+            let intent = AppNavigationIntent(intentId: navigationTarget)
+            if intent != .unknown {
+                return await executeCustomShortcutNavigation(intent, response: shortcut.responseText, userText: userText)
+            }
+        }
+
+        return await respond(shortcut.responseText, userText: userText, intent: .unknown, confidence: 0.96, category: .help, shouldAutoDismiss: false)
+    }
+
+    private func executeCustomShortcutNavigation(_ intent: AppNavigationIntent, response: String, userText: String) async -> VoiceSessionResult {
+        if let actionExecutor {
+            _ = await actionExecutor.execute(intent)
+        }
+        return await respond(response, userText: userText, intent: .unknown, confidence: 0.96, category: .navigation, shouldAutoDismiss: true)
+    }
+
     private func respond(_ text: String, userText: String, intent: HealthVoiceIntent, confidence: Double, category: VoiceSessionCategory, shouldAutoDismiss: Bool) async -> VoiceSessionResult {
         let safeText = SafetyLanguageFilter.filtered(text)
         lastAssistantResponse = safeText
         modelContext.insert(HumanAssistantConversation(userText: userText, assistantText: safeText, intent: intent, confidence: confidence))
+        conversationContext.update(transcript: userText, intent: "\(intent)", response: safeText)
         do {
             try modelContext.save()
         } catch {
@@ -208,8 +286,30 @@ final class VoiceSessionManager: ObservableObject {
         return VoiceSessionResult(transcript: userText, response: safeText, category: category, shouldAutoDismiss: shouldAutoDismiss)
     }
 
+    private func rememberAndRespond(to command: ParsedHealthCommand, userText: String) async -> VoiceSessionResult {
+        SwiftDataHealthMemoryService(modelContext: modelContext).remember(command)
+        HealthMemoryHabitLearningEngine(modelContext: modelContext).learn(
+            command: command,
+            medicines: fetchMedicines(),
+            medicineLogs: fetchMedicineLogs(),
+            healthRecords: fetchHealthRecords(),
+            dailyLogs: fetchSymptomLogs(),
+            interactions: fetchInteractions()
+        )
+        let response = responseEngine.respond(
+            to: command,
+            medicines: fetchMedicines(),
+            medicineLogs: fetchMedicineLogs(),
+            healthRecords: fetchHealthRecords(),
+            symptomLogs: fetchSymptomLogs()
+        )
+        return await respond(response.text, userText: userText, intent: command.intent, confidence: command.confidence, category: .healthLogging, shouldAutoDismiss: true)
+    }
+
     private func isDirectHealthCommand(_ command: ParsedHealthCommand) -> Bool {
         switch command.intent {
+        case .logWeight:
+            return !command.numbers.isEmpty
         case .logSugar:
             return !command.numbers.isEmpty
         case .logBloodPressure:
@@ -223,9 +323,12 @@ final class VoiceSessionManager: ObservableObject {
         }
     }
 
-    private func clearPendingConfirmation(keepIntent: Bool = false) {
+    private func clearPendingConfirmation(keepIntent: Bool = false, keepCustomShortcut: Bool = false) {
         if !keepIntent {
             pendingIntent = nil
+        }
+        if !keepCustomShortcut {
+            pendingCustomShortcut = nil
         }
         awaitingConfirmation = false
         confirmationStartedAt = nil

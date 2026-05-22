@@ -1,13 +1,14 @@
-import Combine
 import Foundation
+import Observation
 import SwiftData
 import UIKit
 
 @MainActor
-final class MedicineReminderViewModel: ObservableObject {
-    @Published var didTakeMedicine = false
-    @Published var isSpeaking = false
-    @Published var caringMessage = "Your health matters. Take a calm breath, then take your medicine when you are ready."
+@Observable
+final class MedicineReminderViewModel {
+    var didTakeMedicine = false
+    var isSpeaking = false
+    var caringMessage = "Your health matters. Take a calm breath, then take your medicine when you are ready."
 
     private let ttsService: TTSServiceProtocol = TTSService()
 
@@ -61,9 +62,21 @@ final class MedicineReminderViewModel: ObservableObject {
 
         do {
             try modelContext.save()
+            cancelFollowUpIfNeeded(for: medicine, scheduledAt: log.scheduledTime, status: status, modelContext: modelContext)
         } catch {
             caringMessage = "I could not save this reminder just now. Please try again."
             HapticsManager.notification(.error)
         }
+    }
+
+    private func cancelFollowUpIfNeeded(
+        for medicine: Medicine,
+        scheduledAt: Date,
+        status: MedicineLogStatus,
+        modelContext: ModelContext
+    ) {
+        guard status == .taken || status == .skipped || status == .snoozed else { return }
+        let followUpManager = MissedDoseFollowUpManager(modelContext: modelContext)
+        followUpManager.cancelFollowUp(for: medicine, scheduledAt: scheduledAt)
     }
 }

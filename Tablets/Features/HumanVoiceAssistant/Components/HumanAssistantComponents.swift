@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum FloatingVoiceState: Equatable {
     case idle
@@ -19,8 +20,15 @@ struct HumanAssistantFloatingButton: View {
     var doubleTapAction: (() -> Void)?
     var longPressAction: (() -> Void)?
     @State private var glow = false
-    @State private var offset: CGSize = .zero
+    @State private var restingOffset: CGSize = .zero
+    @State private var liveOffset: CGSize = .zero
+    @State private var isDragging = false
+    @State private var hasMovedDuringGesture = false
     @State private var suppressNextTap = false
+    @State private var suppressTapUntil = Date.distantPast
+    @State private var pendingSingleTapTask: Task<Void, Never>?
+    @State private var isRepositionModeEnabled = false
+    @State private var repositionModeTask: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .trailing, spacing: Spacing.xSmall) {
@@ -48,15 +56,15 @@ struct HumanAssistantFloatingButton: View {
 
                 Circle()
                     .fill(stateColor.opacity(glow ? 0.20 : 0.08))
-                    .frame(width: glow ? 86 : 68, height: glow ? 86 : 68)
-                    .blur(radius: 10)
+                    .frame(width: glow ? 74 : 62, height: glow ? 74 : 62)
+                    .blur(radius: 8)
 
                 Circle()
                     .fill(buttonFill)
-                    .frame(width: 62, height: 62)
+                    .frame(width: 56, height: 56)
                     .overlay(
                         Image(systemName: symbolName)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(.white)
                             .rotationEffect(.degrees(voiceState == .processing ? 16 : 0))
                     )
@@ -71,40 +79,26 @@ struct HumanAssistantFloatingButton: View {
                     }
                     .appShadow(AppShadow.button)
             }
+            .frame(width: 88, height: 88)
             .contentShape(Circle())
+            .gesture(dragGesture)
+            .simultaneousGesture(longPressGesture)
+            .highPriorityGesture(tapGesture)
         }
-        .offset(offset)
-        .gesture(DragGesture().onChanged { offset = $0.translation })
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.45)
-                .onEnded { _ in
-                    suppressNextTap = true
-                    HapticsManager.selection()
-                    longPressAction?()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                        suppressNextTap = false
-                    }
-                }
-        )
-        .highPriorityGesture(
-            TapGesture(count: 2)
-                .exclusively(before: TapGesture(count: 1))
-                .onEnded { value in
-                    guard !suppressNextTap else { return }
-                    switch value {
-                    case .first:
-                        doubleTapAction?()
-                    case .second:
-                        action()
-                    }
-                }
-        )
+        .offset(liveOffset)
+        .transaction { transaction in
+            if isDragging {
+                transaction.animation = nil
+            }
+        }
         .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: glow)
-        .animation(.easeInOut(duration: 0.7), value: voiceState)
-        .animation(.spring(response: 0.35, dampingFraction: 0.78), value: bubbleText)
-        .animation(.easeInOut(duration: 0.18), value: audioLevel)
-        .onAppear { glow = true }
-        .accessibilityLabel("Voice assistant. Single tap for quick voice. Double tap for full assistant. Long press for options.")
+        .animation(isDragging ? nil : .easeInOut(duration: 0.7), value: voiceState)
+        .animation(isDragging ? nil : .spring(response: 0.35, dampingFraction: 0.78), value: bubbleText)
+        .onAppear {
+            glow = true
+            liveOffset = restingOffset
+        }
+        .accessibilityLabel("Voice assistant. Single tap for quick voice. Double tap for full assistant. Triple tap to move. Long press for options.")
     }
 
     private var isActive: Bool {
@@ -117,10 +111,143 @@ struct HumanAssistantFloatingButton: View {
     }
 
     private func activePulseWidth(_ index: Int) -> CGFloat {
-        let base = CGFloat(74 + index * 18)
-        let voiceBoost = voiceState == .userSpeaking ? CGFloat(audioLevel * 42) : 0
-        let glowBoost = glow ? CGFloat(14 + index * 8) : 0
+        let base = CGFloat(62 + index * 12)
+        let voiceBoost = voiceState == .userSpeaking ? CGFloat(audioLevel * 22) : 0
+        let glowBoost = glow ? CGFloat(8 + index * 4) : 0
         return base + voiceBoost + glowBoost
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard canDrag else { return }
+                pendingSingleTapTask?.cancel()
+                isDragging = true
+                if abs(value.translation.width) > 8 || abs(value.translation.height) > 8 {
+                    hasMovedDuringGesture = true
+                }
+                var transaction = Transaction()
+                transaction.animation = nil
+                withTransaction(transaction) {
+                    liveOffset = clampedOffset(restingOffset + value.translation)
+                }
+            }
+            .onEnded { value in
+                guard canDrag else { return }
+                pendingSingleTapTask?.cancel()
+                let moved = abs(value.translation.width) > 8 || abs(value.translation.height) > 8
+                let finalOffset = snappedOffset(restingOffset + value.translation)
+                var transaction = Transaction()
+                transaction.animation = nil
+                withTransaction(transaction) {
+                    restingOffset = finalOffset
+                    liveOffset = finalOffset
+                    suppressTapUntil = Date().addingTimeInterval(0.35)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    isDragging = false
+                    hasMovedDuringGesture = moved
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        if !isDragging {
+                            hasMovedDuringGesture = false
+                        }
+                    }
+                }
+            }
+    }
+
+    private var longPressGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.45)
+            .onEnded { _ in
+                guard !isDragging, !hasMovedDuringGesture, Date() >= suppressTapUntil else { return }
+                pendingSingleTapTask?.cancel()
+                suppressNextTap = true
+                HapticsManager.selection()
+                longPressAction?()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                    suppressNextTap = false
+                }
+            }
+    }
+
+    private var tapGesture: some Gesture {
+        TapGesture(count: 3)
+            .exclusively(before: TapGesture(count: 2).exclusively(before: TapGesture(count: 1)))
+            .onEnded { value in
+                guard !suppressNextTap, !isDragging, !hasMovedDuringGesture, Date() >= suppressTapUntil else { return }
+                switch value {
+                case .first:
+                    enableRepositionMode()
+                case .second(let tapValue):
+                    switch tapValue {
+                    case .first:
+                        pendingSingleTapTask?.cancel()
+                        doubleTapAction?()
+                    case .second:
+                        scheduleSingleTap()
+                    }
+                }
+            }
+    }
+
+    private func enableRepositionMode() {
+        pendingSingleTapTask?.cancel()
+        isRepositionModeEnabled = true
+        suppressTapUntil = Date().addingTimeInterval(0.35)
+        HapticsManager.notification(.success)
+        repositionModeTask?.cancel()
+        repositionModeTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(10))
+            if !Task.isCancelled {
+                isRepositionModeEnabled = false
+            }
+        }
+    }
+
+    private func scheduleSingleTap() {
+        pendingSingleTapTask?.cancel()
+        pendingSingleTapTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled,
+                  !suppressNextTap,
+                  !isDragging,
+                  !hasMovedDuringGesture,
+                  Date() >= suppressTapUntil
+            else { return }
+            action()
+        }
+    }
+
+    private var canDrag: Bool {
+        guard isRepositionModeEnabled else { return false }
+        switch voiceState {
+        case .idle, .success, .error:
+            return true
+        case .preparing, .listening, .userSpeaking, .processing, .speaking:
+            return false
+        }
+    }
+
+    private func clampedOffset(_ proposed: CGSize) -> CGSize {
+        let screen = UIScreen.main.bounds
+        let maxLeft = max(screen.width - 118, 0)
+        let maxUp = max(screen.height - 240, 0)
+        return CGSize(
+            width: min(max(proposed.width, -maxLeft), 0),
+            height: min(max(proposed.height, -maxUp), 0)
+        )
+    }
+
+    private func snappedOffset(_ proposed: CGSize) -> CGSize {
+        let clamped = clampedOffset(proposed)
+        let screen = UIScreen.main.bounds
+        let maxLeft = max(screen.width - 118, 0)
+        let shouldSnapLeft = clamped.width < -(maxLeft / 2)
+
+        return CGSize(
+            width: shouldSnapLeft ? -maxLeft : 0,
+            height: clamped.height
+        )
     }
 
     private var symbolName: String {
@@ -163,6 +290,10 @@ struct HumanAssistantFloatingButton: View {
         if case .error = voiceState { return AppColor.softRed.opacity(0.12) }
         return AppColor.cream.opacity(0.96)
     }
+}
+
+private func + (lhs: CGSize, rhs: CGSize) -> CGSize {
+    CGSize(width: lhs.width + rhs.width, height: lhs.height + rhs.height)
 }
 
 struct HumanAssistantOrbView: View {

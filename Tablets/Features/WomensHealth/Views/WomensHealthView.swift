@@ -19,6 +19,13 @@ struct WomensHealthView: View {
                     VStack(alignment: .leading, spacing: Spacing.large) {
                         header
 
+                        if cycles.isEmpty {
+                            VoiceCoachingCard(
+                                message: "No period logs yet.",
+                                command: "My period started today"
+                            )
+                        }
+
                         WomensHealthDashboardCard(
                             cycleDay: viewModel.predictionViewModel.currentCycleDay(from: cycles),
                             daysUntilNextPeriod: max(Calendar.current.dateComponents([.day], from: .now, to: prediction.nextPeriodDate).day ?? 0, 0),

@@ -1,6 +1,7 @@
 import AVFoundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 struct AppRootView: View {
     @Environment(\.modelContext) private var modelContext
@@ -8,17 +9,25 @@ struct AppRootView: View {
     @StateObject private var router = AppRouter()
     @StateObject private var quickSpeechService = WhisperKitSpeechToTextService()
     @StateObject private var quickTTSService = TTSService()
+    @StateObject private var voiceTipManager = VoiceTipManager()
     @State private var isShowingHumanAssistant = false
     @State private var isShowingAssistantOptions = false
     @State private var isShowingModelStatus = false
     @State private var floatingVoiceState: FloatingVoiceState = .idle
     @State private var floatingBubbleText = ""
+    @State private var isShowingSuggestionChips = false
+    @State private var currentVoiceTip: VoiceTip?
     @State private var inlineSessionManager: VoiceSessionManager?
     @State private var inlineAutoStopTask: Task<Void, Never>?
     @State private var bubbleHideTask: Task<Void, Never>?
+    @State private var tipHideTask: Task<Void, Never>?
+    @State private var lastInlineVoiceTapAt = Date.distantPast
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            AppColor.warmWhite
+                .ignoresSafeArea()
+
             TabView(selection: $router.selectedTab) {
                 DashboardView()
                     .tabItem {
@@ -51,26 +60,45 @@ struct AppRootView: View {
                     .tag(AppTab.more)
             }
 
-            HumanAssistantFloatingButton(
-                voiceState: floatingVoiceState,
-                bubbleText: floatingBubbleText,
-                audioLevel: quickSpeechService.audioLevel
-            ) {
-                HapticsManager.selection()
-                handleInlineVoiceTap()
-            } doubleTapAction: {
-                HapticsManager.selection()
-                isShowingHumanAssistant = true
-            } longPressAction: {
-                isShowingAssistantOptions = true
+            VStack(alignment: .trailing, spacing: Spacing.small) {
+                if let currentVoiceTip {
+                    VoiceTipBannerView(tip: currentVoiceTip) {
+                        dismissVoiceTip()
+                    }
+                }
+
+                if isShowingSuggestionChips {
+                    VoiceSuggestionChipsView(suggestions: VoiceSuggestionChips.suggestions()) { suggestion in
+                        HapticsManager.selection()
+                        Task { await processSuggestionChip(suggestion) }
+                    }
+                }
+
+                HumanAssistantFloatingButton(
+                    voiceState: floatingVoiceState,
+                    bubbleText: floatingBubbleText,
+                    audioLevel: quickSpeechService.audioLevel
+                ) {
+                    HapticsManager.selection()
+                    handleInlineVoiceTap()
+                } doubleTapAction: {
+                    HapticsManager.selection()
+                    isShowingHumanAssistant = true
+                } longPressAction: {
+                    isShowingAssistantOptions = true
+                }
             }
             .padding(.trailing, Spacing.medium)
             .padding(.bottom, 82)
+            .zIndex(10_000)
         }
         .environmentObject(router)
         .tint(AppColor.medicalBlue)
         .sheet(isPresented: $isShowingHumanAssistant) {
             HumanVoiceAssistantView(appRouter: router)
+                .onAppear {
+                    DebugStartupLogger.log("HumanVoiceAssistantView sheet appeared")
+                }
         }
         .confirmationDialog("Voice Assistant", isPresented: $isShowingAssistantOptions, titleVisibility: .visible) {
             Button("Open full assistant") {
@@ -83,6 +111,11 @@ struct AppRootView: View {
             Button("Privacy/offline model status") {
                 isShowingModelStatus = true
             }
+            #if DEBUG
+            Button("Play last recording") {
+                quickSpeechService.playLastRecordingForDebug()
+            }
+            #endif
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Choose how you want to use the local voice assistant.")
@@ -92,9 +125,45 @@ struct AppRootView: View {
         } message: {
             Text(WhisperModelManager.shared.isReady ? "Offline voice model is ready. Voice understanding runs on this device." : "Offline voice model is not ready yet. Open the full assistant to download it.")
         }
+        .onAppear {
+            UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
+            MedicineNotificationDelegate.shared.configure(modelContext: modelContext)
+            DebugStartupLogger.log("AppRootView.onAppear selectedTab=\(router.selectedTab.title) healthKitEnabled=\(UserHealthProfile.healthKitEnabled) modelReady=\(WhisperModelManager.shared.isReady)")
+        }
+        .onChange(of: router.selectedTab) { _, newValue in
+            DebugStartupLogger.log("AppRootView selectedTab changed to \(newValue.title)")
+        }
+        .onChange(of: isShowingHumanAssistant) { _, isPresented in
+            DebugStartupLogger.log("isShowingHumanAssistant changed to \(isPresented)")
+        }
+        .onChange(of: isShowingAssistantOptions) { _, isPresented in
+            DebugStartupLogger.log("isShowingAssistantOptions changed to \(isPresented)")
+        }
+        .onChange(of: isShowingModelStatus) { _, isPresented in
+            DebugStartupLogger.log("isShowingModelStatus changed to \(isPresented)")
+        }
+        .onChange(of: isShowingSuggestionChips) { _, isPresented in
+            DebugStartupLogger.log("isShowingSuggestionChips changed to \(isPresented)")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openMedicineReminder)) { _ in
+            router.selectedTab = .medicines
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dashboardVoicePhraseRequested)) { notification in
+            guard let phrase = notification.object as? String else { return }
+            DebugStartupLogger.log("Received dashboardVoicePhraseRequested: \(phrase)")
+            Task { await processSuggestionChip(phrase) }
+        }
+        .task {
+            DebugStartupLogger.log("AppRootView.task started")
+            DebugStartupLogger.log("HealthKit auto authorization skipped; permissions are requested only from Apple Health settings")
+        }
     }
 
     private func handleInlineVoiceTap() {
+        let now = Date()
+        guard now.timeIntervalSince(lastInlineVoiceTapAt) >= 0.35 else { return }
+        lastInlineVoiceTapAt = now
+
         switch floatingVoiceState {
         case .idle, .success:
             startInlineListening()
@@ -112,7 +181,16 @@ struct AppRootView: View {
 
     private func startInlineListening() {
         inlineAutoStopTask?.cancel()
-        quickTTSService.stop()
+        isShowingSuggestionChips = false
+
+        guard !quickSpeechService.isTranscribing else {
+            showBubble("Processing...")
+            return
+        }
+
+        if quickTTSService.isSpeaking {
+            quickTTSService.stop()
+        }
 
         guard WhisperModelManager.shared.isReady else {
             setError("Offline voice model is not ready")
@@ -133,10 +211,11 @@ struct AppRootView: View {
                 try await quickSpeechService.startListening()
                 floatingVoiceState = .listening
                 showBubble("Listening...")
+                isShowingSuggestionChips = true
                 watchInlineVoiceStop()
                 HapticsManager.impact(.soft)
             } catch {
-                setError("I could not start listening")
+                setError((error as? LocalizedError)?.errorDescription ?? "I could not start listening")
             }
         }
     }
@@ -163,6 +242,7 @@ struct AppRootView: View {
 
     private func stopAndProcessInlineVoice() async {
         inlineAutoStopTask?.cancel()
+        isShowingSuggestionChips = false
         floatingVoiceState = .processing
         showBubble("Thinking...")
 
@@ -182,6 +262,7 @@ struct AppRootView: View {
             let result = await inlineSessionManager.process(transcript: transcript)
             floatingBubbleText = firstLine(result.response)
             floatingVoiceState = .speaking
+            showVoiceTipIfNeeded()
 
             if result.shouldAutoDismiss {
                 scheduleSuccessReset(delay: 1.2)
@@ -189,7 +270,35 @@ struct AppRootView: View {
                 scheduleSuccessReset(delay: 3.0)
             }
         } catch {
-            setError("I could not understand that clearly")
+            setError((error as? LocalizedError)?.errorDescription ?? "I could not understand that clearly")
+        }
+    }
+
+    private func processSuggestionChip(_ suggestion: String) async {
+        inlineAutoStopTask?.cancel()
+        isShowingSuggestionChips = false
+        floatingVoiceState = .processing
+        showBubble("Thinking...")
+
+        if quickSpeechService.isListening {
+            _ = try? await quickSpeechService.stopListening()
+        }
+
+        configureInlineSessionIfNeeded()
+        guard let inlineSessionManager else {
+            setError("Assistant is not ready")
+            return
+        }
+
+        let result = await inlineSessionManager.process(transcript: suggestion)
+        floatingBubbleText = firstLine(result.response)
+        floatingVoiceState = .speaking
+        showVoiceTipIfNeeded()
+
+        if result.shouldAutoDismiss {
+            scheduleSuccessReset(delay: 1.2)
+        } else {
+            scheduleSuccessReset(delay: 3.0)
         }
     }
 
@@ -208,6 +317,7 @@ struct AppRootView: View {
     }
 
     private func setError(_ message: String) {
+        isShowingSuggestionChips = false
         floatingVoiceState = .error(message)
         floatingBubbleText = message
         HapticsManager.notification(.error)
@@ -218,6 +328,7 @@ struct AppRootView: View {
         bubbleHideTask?.cancel()
         bubbleHideTask = Task {
             await sleep(seconds: delay)
+            isShowingSuggestionChips = false
             floatingVoiceState = .success
             try? await Task.sleep(for: .milliseconds(700))
             floatingVoiceState = .idle
@@ -226,6 +337,7 @@ struct AppRootView: View {
     }
 
     private func setIdleSoon() {
+        isShowingSuggestionChips = false
         floatingVoiceState = .idle
         hideBubbleAfter(seconds: 0.4)
     }
@@ -247,6 +359,23 @@ struct AppRootView: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > 96 else { return trimmed }
         return "\(trimmed.prefix(96))..."
+    }
+
+    private func showVoiceTipIfNeeded() {
+        guard let tip = voiceTipManager.nextTipAfterInteraction() else { return }
+        currentVoiceTip = tip
+        tipHideTask?.cancel()
+        tipHideTask = Task {
+            await sleep(seconds: 4)
+            if !Task.isCancelled {
+                currentVoiceTip = nil
+            }
+        }
+    }
+
+    private func dismissVoiceTip() {
+        tipHideTask?.cancel()
+        currentVoiceTip = nil
     }
 
     private func sleep(seconds: TimeInterval) async {

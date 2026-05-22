@@ -5,6 +5,8 @@ struct VoiceActivityDetector {
     let silenceTimeout: TimeInterval = 1.5
     let noSpeechTimeout: TimeInterval = 5.0
     let maximumDuration: TimeInterval = 12.0
+    let startupGracePeriod: TimeInterval = 0.5
+    let minimumAudioBeforeAutoStop: TimeInterval = 0.7
 
     private(set) var speechStarted = false
     private(set) var startedAt = Date()
@@ -17,21 +19,27 @@ struct VoiceActivityDetector {
     }
 
     mutating func update(audioLevel: Double, now: Date = .now) -> VoiceActivityDecision {
+        let elapsed = now.timeIntervalSince(startedAt)
+
         if audioLevel > speechThreshold {
             speechStarted = true
             lastSpeechAt = now
             return .continueListening(speechDetected: true)
         }
 
-        if now.timeIntervalSince(startedAt) >= maximumDuration {
+        if elapsed < startupGracePeriod {
+            return .continueListening(speechDetected: speechStarted)
+        }
+
+        if elapsed >= maximumDuration {
             return .stop(reason: .maximumDuration)
         }
 
-        if !speechStarted && now.timeIntervalSince(startedAt) >= noSpeechTimeout {
+        if !speechStarted && elapsed >= noSpeechTimeout {
             return .stop(reason: .noSpeechDetected)
         }
 
-        if speechStarted && now.timeIntervalSince(lastSpeechAt) >= silenceTimeout {
+        if speechStarted && elapsed >= minimumAudioBeforeAutoStop && now.timeIntervalSince(lastSpeechAt) >= silenceTimeout {
             return .stop(reason: .silenceAfterSpeech)
         }
 

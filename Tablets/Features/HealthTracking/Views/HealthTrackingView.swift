@@ -29,6 +29,22 @@ struct HealthTrackingView: View {
                         )
                         .healthEntrance(didAppear: didAppear, delay: 0.02)
 
+                        if !hasBPRecords {
+                            VoiceCoachingCard(
+                                message: "No BP readings yet.",
+                                command: "My BP is 120 over 80"
+                            )
+                            .healthEntrance(didAppear: didAppear, delay: 0.05)
+                        }
+
+                        if !hasSugarRecords {
+                            VoiceCoachingCard(
+                                message: "No sugar readings yet.",
+                                command: "My sugar is 145 after food"
+                            )
+                            .healthEntrance(didAppear: didAppear, delay: 0.07)
+                        }
+
                         LazyVGrid(columns: columns, spacing: Spacing.small) {
                             ForEach(Array(HealthRecordType.allCases.enumerated()), id: \.element.id) { index, type in
                                 HealthMetricTile(
@@ -147,6 +163,14 @@ struct HealthTrackingView: View {
         }
 
         return record.measuredAt.shortTimeText
+    }
+
+    private var hasBPRecords: Bool {
+        records.contains { $0.type == .bloodPressure }
+    }
+
+    private var hasSugarRecords: Bool {
+        records.contains { $0.type == .bloodSugar }
     }
 
     private func color(for type: HealthRecordType) -> Color {

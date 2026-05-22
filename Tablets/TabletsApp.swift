@@ -13,12 +13,17 @@ struct TabletsApp: App {
     private let sharedModelContainer = AppModelContainer.make()
 
     init() {
+        DebugStartupLogger.log("TabletsApp.init started")
         AppTheme.configureAppearance()
+        DebugStartupLogger.log("AppTheme configured")
     }
 
     var body: some Scene {
         WindowGroup {
             AppRootView()
+                .onAppear {
+                    DebugStartupLogger.log("WindowGroup root AppRootView appeared")
+                }
         }
         .modelContainer(sharedModelContainer)
     }

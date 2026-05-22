@@ -6,13 +6,13 @@ protocol IntentSimilarityScoring {
 }
 
 final class IntentSimilarityEngine: IntentSimilarityScoring {
-    private struct CachedExample {
+    private struct CachedIntent {
         let group: IntentExampleGroup
-        let example: String
+        let examples: [String]
         let vector: [Double]
     }
 
-    private var cachedExamples: [CachedExample]?
+    private var cachedIntents: [CachedIntent]?
     private let embedding = NLEmbedding.wordEmbedding(for: .english)
 
     func bestMatch(for transcript: String) async -> IntentExampleMatch? {
@@ -21,43 +21,51 @@ final class IntentSimilarityEngine: IntentSimilarityScoring {
 
         return await Task.detached(priority: .userInitiated) { [weak self] in
             guard let self, let transcriptVector = self.vector(for: normalized) else { return nil }
-            let examples = self.loadCachedExamples()
-            guard !examples.isEmpty else { return nil }
+            let intents = self.loadCachedIntents()
+            guard !intents.isEmpty else { return nil }
 
-            let best = examples
+            let best = intents
                 .map { ($0, self.cosine(transcriptVector, $0.vector)) }
                 .max { $0.1 < $1.1 }
 
-            guard let best, best.1 >= 0.58 else {
-                return IntentExampleMatch(intent: .unknown, confidence: best?.1 ?? 0, rawTranscript: transcript, matchedExample: best?.0.example, displayName: best?.0.group.displayName, needsConfirmation: false)
+            guard let best, best.1 >= 0.55 else {
+                return IntentExampleMatch(intent: .unknown, confidence: best?.1 ?? 0, rawTranscript: transcript, matchedExample: best?.0.examples.first, displayName: best?.0.group.displayName, needsConfirmation: false)
             }
 
             return IntentExampleMatch(
                 intent: AppNavigationIntent(intentId: best.0.group.intentId),
                 confidence: best.1,
                 rawTranscript: transcript,
-                matchedExample: best.0.example,
+                matchedExample: best.0.examples.first,
                 displayName: best.0.group.displayName,
                 needsConfirmation: best.1 < 0.72
             )
         }.value
     }
 
-    private func loadCachedExamples() -> [CachedExample] {
-        if let cachedExamples { return cachedExamples }
+    private func loadCachedIntents() -> [CachedIntent] {
+        if let cachedIntents { return cachedIntents }
         guard let url = Bundle.main.url(forResource: "IntentExampleLibrary", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let groups = try? JSONDecoder().decode([IntentExampleGroup].self, from: data) else {
             return []
         }
-        let cached = groups.flatMap { group in
-            group.examples.compactMap { example -> CachedExample? in
-                guard let vector = vector(for: normalize(example)) else { return nil }
-                return CachedExample(group: group, example: example, vector: vector)
-            }
+        let cached = groups.compactMap { group -> CachedIntent? in
+            let vectors = group.examples.compactMap { vector(for: normalize($0)) }
+            guard let averaged = average(vectors) else { return nil }
+            return CachedIntent(group: group, examples: group.examples, vector: averaged)
         }
-        cachedExamples = cached
+        cachedIntents = cached
         return cached
+    }
+
+    private func average(_ vectors: [[Double]]) -> [Double]? {
+        guard let first = vectors.first else { return nil }
+        var sum = Array(repeating: 0.0, count: first.count)
+        for vector in vectors where vector.count == first.count {
+            for index in vector.indices { sum[index] += vector[index] }
+        }
+        return sum.map { $0 / Double(vectors.count) }
     }
 
     private func vector(for text: String) -> [Double]? {

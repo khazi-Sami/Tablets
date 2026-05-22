@@ -13,6 +13,7 @@ struct HumanVoiceAssistantView: View {
     @Query private var preferences: [HumanAssistantPreference]
     @StateObject private var viewModel = HumanVoiceAssistantViewModel()
     @StateObject private var fallbackRouter = AppRouter()
+    @State private var isShowingCustomShortcuts = false
     @AppStorage(AssistantAccessibilitySettings.slowerVoiceKey) private var slowerVoice = false
     @AppStorage(AssistantAccessibilitySettings.highContrastKey) private var highContrast = false
     @AppStorage(AssistantAccessibilitySettings.simplifiedVoiceModeKey) private var simplifiedMode = false
@@ -46,6 +47,18 @@ struct HumanVoiceAssistantView: View {
                         }
 
                         accessibilityCard
+
+                        Button {
+                            isShowingCustomShortcuts = true
+                        } label: {
+                            Label("My Voice Shortcuts", systemImage: "mic.badge.plus")
+                                .font(AppFont.bodyStrong)
+                                .foregroundStyle(AppColor.medicalBlueDeep)
+                                .frame(maxWidth: .infinity)
+                                .padding(Spacing.medium)
+                                .background(AppColor.medicalBlue.opacity(0.10), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
 
                         if !viewModel.modelManager.isReady || viewModel.isInstallingModel || viewModel.isModelLoading {
                             AIModelDownloadCard(
@@ -129,6 +142,9 @@ struct HumanVoiceAssistantView: View {
             viewModel.configure(modelContext: modelContext, appRouter: activeAppRouter, dismissAssistant: { dismiss() }) {
                 currentPreference
             }
+        }
+        .sheet(isPresented: $isShowingCustomShortcuts) {
+            CustomShortcutsView()
         }
     }
 

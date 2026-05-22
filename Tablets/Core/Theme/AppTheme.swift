@@ -17,5 +17,6 @@ enum AppTheme {
         UINavigationBar.appearance().scrollEdgeAppearance = navigationAppearance
         UINavigationBar.appearance().compactAppearance = navigationAppearance
         UITabBar.appearance().unselectedItemTintColor = UIColor(AppColor.tertiaryInk)
+        UIWindow.appearance().backgroundColor = UIColor(AppColor.warmWhite)
     }
 }

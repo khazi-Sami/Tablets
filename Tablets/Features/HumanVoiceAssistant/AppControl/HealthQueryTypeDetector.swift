@@ -24,14 +24,14 @@ final class HealthQueryTypeDetector {
     func detect(_ transcript: String) -> HealthQueryType {
         let text = normalize(transcript)
         let numbers = extractNumbers(text)
-        let hasBP = containsAny(text, ["bp", "blood pressure", "pressure", "systolic", "diastolic"])
-        let hasSugar = containsAny(text, ["sugar", "blood sugar", "glucose", "diabetes"])
-        let hasMedicine = containsAny(text, ["medicine", "tablet", "pill", "dose", "pending", "taken"])
-        let hasPeriod = containsAny(text, ["period", "cycle", "monthly", "menstrual"])
-        let hasDoctor = containsAny(text, ["doctor", "clinic", "checkup", "appointment"])
-        let hasAverage = containsAny(text, ["average", "weekly", "this week", "last week"])
-        let hasComparison = containsAny(text, ["compare", "compared", "better than", "yesterday", "last time", "last week", "this week"])
-        let hasRangeCheck = containsAny(text, ["okay", " ok ", "normal", "high", "low"]) || text.hasPrefix("is ")
+        let hasBP = containsAny(text, ["bp", "blood pressure", "pressure", "systolic", "diastolic", "tension", "hypertension", "is my bp okay", "how is my bp doing", "my pressure these days", "is my bp stable", "has my bp improved", "bp better or worse", "highest bp", "lowest bp", "bp reading last week", "bp this month", "tension kaisa hai", "bp kaisa hai", "tension kitna tha", "was my bp high yesterday", "is my blood pressure normal", "how has my bp been", "bp under control"])
+        let hasSugar = containsAny(text, ["sugar", "blood sugar", "glucose", "diabetes", "diabetic", "hba1c", "is my sugar under control", "how is my diabetes doing", "sugar kitna tha", "sugar kaisa hai", "sugar this month", "was my sugar high today", "fasting sugar average", "after food sugar average", "sugar before meal average", "sugar getting better", "diabetes in control", "sugar comparison", "highest sugar recorded", "lowest sugar recorded", "sugar trend this week", "sugar trend this month", "how has my sugar been"])
+        let hasMedicine = containsAny(text, ["medicine", "tablet", "pill", "dose", "pending", "taken", "goli", "dawa", "dawai", "which tablet should i take now", "tablet abhi kaunsa", "kya tablet lena hai abhi", "medicine time kya hai", "tablet schedule today", "did i miss any tablet", "which medicine for morning", "which medicine for night", "tablet for this afternoon", "medicine for this evening", "koi tablet pending hai kya", "have i taken all tablets today", "medicine log for today", "todays dose", "did i take all my tablets", "how many tablets left today", "tablet history today", "medicine history today"])
+        let hasPeriod = containsAny(text, ["period", "cycle", "monthly", "menstrual", "mahwari", "masik", "period kab aaya tha", "last period kab tha", "period kitne din baad", "cycle kitna lamba hai", "agla period kab aayega", "period late hai kya", "am i late this month", "how many days since my last period", "is my period regular", "cycle length average", "when did my last period end", "how long did my last period last", "period ke kitne din baad", "ovulation kab tha", "fertile window kab hai", "next fertile window", "is my cycle regular"])
+        let hasDoctor = containsAny(text, ["doctor", "clinic", "checkup", "appointment", "next appointment kab hai", "doctor appointment kab hai", "when do i see doctor next", "when was my last doctor visit", "doctor se kab mila tha", "hospital kab jana hai", "clinic appointment kab hai", "medical checkup kab hai", "upcoming appointment", "past appointments"])
+        let hasAverage = containsAny(text, ["average", "weekly", "this week", "last week", "this month"])
+        let hasComparison = containsAny(text, ["compare", "compared", "better than", "worse", "improved", "stable", "yesterday", "last time", "last week", "this week"])
+        let hasRangeCheck = containsAny(text, ["okay", " ok ", "normal", "high", "low", "under control", "control", "kaisa"]) || text.hasPrefix("is ")
 
         if hasBP || looksLikeBPRange(text, numbers: numbers) {
             if hasRangeCheck || looksLikeBPRange(text, numbers: numbers) {
@@ -52,15 +52,15 @@ final class HealthQueryTypeDetector {
         }
 
         if hasMedicine {
-            if containsAny(text, ["did i", "taken", "took"]) { return .medicineTakenStatus }
-            if containsAny(text, ["next", "when"]) { return .medicineNext }
-            if containsAny(text, ["pending", "should i take", "miss"]) { return .medicinePending }
+            if containsAny(text, ["did i", "taken", "took", "have i taken all", "medicine log today"]) { return .medicineTakenStatus }
+            if containsAny(text, ["next", "when", "which tablet now", "tablet abhi kaunsa", "kya tablet lena hai", "medicine time kya hai", "which medicine morning", "which medicine night", "tablet for afternoon", "medicine for evening"]) { return .medicineNext }
+            if containsAny(text, ["pending", "should i take", "miss", "koi tablet pending hai", "did i miss my tablet", "tablet schedule today", "dose today"]) { return .medicinePending }
             return .medicinePending
         }
 
         if hasPeriod {
-            if containsAny(text, ["next", "late", "am i"]) { return .periodNext }
-            if containsAny(text, ["cycle", "length"]) { return .periodCycle }
+            if containsAny(text, ["next", "late", "am i", "agla", "kab aayega", "period kitne din baad"]) { return .periodNext }
+            if containsAny(text, ["cycle", "length", "lamba", "regular", "average"]) { return .periodCycle }
             return .periodLast
         }
 
@@ -68,7 +68,7 @@ final class HealthQueryTypeDetector {
             return .doctorNext
         }
 
-        if containsAny(text, ["how am i doing", "how is my health", "give me summary", "health status", "what happened this week"]) {
+        if containsAny(text, ["how am i doing", "how is my health", "give me summary", "health status", "what happened this week", "how have i been", "health summary batao", "overall health kaisa hai", "this week ka health", "health report today", "tell me about my health", "give me a health summary", "health update do", "health update", "how is everything health wise", "recent health", "health this week", "health this month", "give me an overview of my health", "how is my overall wellbeing", "how have i been this week", "how am i doing overall"]) {
             return .healthSummary
         }
 
@@ -78,6 +78,26 @@ final class HealthQueryTypeDetector {
     private func normalize(_ transcript: String) -> String {
         var text = transcript.lowercased()
         let replacements: [(String, String)] = [
+            ("tension kaisa hai", "how is my bp"),
+            ("tension kitna tha", "what was my bp"),
+            ("bp kaisa hai", "how is my bp"),
+            ("sugar kitna hai", "how is my sugar"),
+            ("sugar kitna tha", "what was my sugar"),
+            ("sugar kaisa hai", "how is my sugar"),
+            ("period kab aaya tha", "when was my last period"),
+            ("last period kab tha", "when was my last period"),
+            ("agla period kab aayega", "when is my next period"),
+            ("period late hai kya", "is my period late"),
+            ("cycle kitna lamba hai", "cycle length average"),
+            ("next appointment kab hai", "when is my next doctor appointment"),
+            ("doctor appointment kab hai", "when is my next doctor appointment"),
+            ("doctor se kab mila tha", "when was my last doctor visit"),
+            ("hospital kab jana hai", "when is my next doctor appointment"),
+            ("clinic appointment kab hai", "when is my next doctor appointment"),
+            ("medical checkup kab hai", "when is my next doctor appointment"),
+            ("health summary batao", "give me health summary"),
+            ("health update do", "health update"),
+            ("overall health kaisa hai", "how is my health"),
             ("one twenty", "120"),
             ("one forty five", "145"),
             ("one forty", "140"),

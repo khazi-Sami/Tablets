@@ -236,12 +236,12 @@ private enum PeriodMode {
 }
 
 private enum NoData {
-    static let bp = "I don't have BP readings saved yet. You can say, 'My BP is 120 over 80' and I will save it."
-    static let sugar = "I don't have sugar readings saved yet. You can say, 'My sugar is 145 after food' and I will save it."
-    static let medicine = "I don't see pending medicine records yet. You can add medicines first, then I can help track them."
-    static let period = "I don't have period logs yet. You can say, 'My period started today' to save one."
-    static let doctor = "I don't have doctor appointments saved yet. You can add one in Doctor Visit."
-    static let general = "I don't have enough saved data for that yet. Once you log a few readings, I can help you compare them."
+    static let bp = "\(ResponseVariationPool().noDataFound()) You can say, 'My BP is 120 over 80' and I will save it."
+    static let sugar = "\(ResponseVariationPool().noDataFound()) You can say, 'My sugar is 145 after food' and I will save it."
+    static let medicine = "\(ResponseVariationPool().noDataFound()) You can add medicines first, then I can help track them."
+    static let period = "\(ResponseVariationPool().noDataFound()) You can say, 'My period started today' to save one."
+    static let doctor = "\(ResponseVariationPool().noDataFound()) You can add one in Doctor Visit."
+    static let general = ResponseVariationPool().noDataFound()
 }
 
 private enum ReferenceRange {

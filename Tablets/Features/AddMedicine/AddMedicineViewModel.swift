@@ -10,6 +10,7 @@ final class AddMedicineViewModel: ObservableObject {
     @Published var instruction: MedicineInstruction = .afterFood
     @Published var frequencyType: MedicineFrequencyType = .daily
     @Published var reminderTime = Date()
+    @Published var reminderTimes: [Date] = [Date()]
     @Published var startDate = Date()
     @Published var hasEndDate = false
     @Published var endDate = Date()
@@ -17,6 +18,7 @@ final class AddMedicineViewModel: ObservableObject {
     @Published var lowStockAlertCount = 5
     @Published var notes = ""
     @Published var errorMessage: String?
+    @Published var notificationMessage: String?
     @Published var didSave = false
 
     var canSave: Bool {
@@ -26,18 +28,23 @@ final class AddMedicineViewModel: ObservableObject {
     }
 
     func save(modelContext: ModelContext) -> Bool {
+        saveMedicine(modelContext: modelContext) != nil
+    }
+
+    func saveMedicine(modelContext: ModelContext) -> Medicine? {
         guard canSave else {
             errorMessage = "Please enter medicine name and dosage. End date must be after the start date."
-            return false
+            return nil
         }
 
+        let times = sanitizedReminderTimes
         let medicine = Medicine(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             dosage: dosage.trimmingCharacters(in: .whitespacesAndNewlines),
             medicineType: medicineType,
             instruction: instruction,
             frequencyType: frequencyType,
-            times: [reminderTime],
+            times: times,
             startDate: startDate,
             endDate: hasEndDate ? endDate : nil,
             stockCount: max(0, stockCount),
@@ -48,10 +55,37 @@ final class AddMedicineViewModel: ObservableObject {
         do {
             try MedicineRepository(modelContext: modelContext).add(medicine)
             didSave = true
-            return true
+            return medicine
         } catch {
             errorMessage = error.localizedDescription
-            return false
+            return nil
         }
+    }
+
+    func addReminderTime() {
+        let next = Calendar.current.date(byAdding: .hour, value: 1, to: reminderTimes.last ?? reminderTime) ?? Date()
+        reminderTimes.append(next)
+    }
+
+    func removeReminderTime(at offsets: IndexSet) {
+        for index in offsets.sorted(by: >) where reminderTimes.indices.contains(index) {
+            reminderTimes.remove(at: index)
+        }
+        if reminderTimes.isEmpty {
+            reminderTimes = [Date()]
+        }
+    }
+
+    var sanitizedReminderTimes: [Date] {
+        let source = reminderTimes.isEmpty ? [reminderTime] : reminderTimes
+        return source
+            .sorted()
+            .reduce(into: [Date]()) { result, date in
+                let key = AdaptiveReminderTimeKey.key(from: date)
+                let hasKey = result.contains { AdaptiveReminderTimeKey.key(from: $0) == key }
+                if !hasKey {
+                    result.append(date)
+                }
+            }
     }
 }

@@ -23,6 +23,7 @@ final class AppKnowledgeBase {
         .init(featureName: "Health Memory", description: "Review private habit insights and saved patterns.", exampleVoiceCommands: ["open health memory"], navigationIntent: .openHealthMemory, keywords: ["memory", "habit", "pattern"]),
         .init(featureName: "Daily Check-In", description: "Log mood, sleep, energy, stress, and symptoms.", exampleVoiceCommands: ["daily check in"], navigationIntent: .openDailyCheckIn, keywords: ["check in", "mood", "sleep", "stress"]),
         .init(featureName: "Settings", description: "Adjust profile, haptics, and app preferences.", exampleVoiceCommands: ["open settings"], navigationIntent: .openSettings, keywords: ["settings", "profile", "preference"]),
+        .init(featureName: "Apple Health", description: "Connect Apple Health for steps, sleep, heart rate, and optional reading sync. Your Apple Health data stays on your device.", exampleVoiceCommands: ["is Apple Health connected", "how many steps today"], navigationIntent: .openSettings, keywords: ["apple health", "healthkit", "steps", "sleep", "heart rate"]),
         .init(featureName: "Privacy and Offline AI", description: "Voice commands are processed locally after setup.", exampleVoiceCommands: ["how does offline ai work"], navigationIntent: .helpGeneral, keywords: ["privacy", "offline", "ai", "voice"])
     ]
 

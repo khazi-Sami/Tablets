@@ -1,4 +1,5 @@
 import Foundation
+import HealthKit
 import SwiftData
 
 @MainActor
@@ -6,6 +7,7 @@ struct ResponseEngine {
     let modelContext: ModelContext
     let comparisonEngine = HealthComparisonEngine()
     let memorySearchEngine = HealthMemorySearchEngine()
+    let variationPool = ResponseVariationPool()
 
     func respond(
         to command: ParsedHealthCommand,
@@ -27,6 +29,8 @@ struct ResponseEngine {
             return logSugar(command, healthRecords: healthRecords)
         case .logBloodPressure:
             return logBloodPressure(command)
+        case .logWeight:
+            return logWeight(command)
         case .askSugar:
             return HealthAssistantResponse(text: comparisonEngine.latestSugarComparison(records: healthRecords), requiresConfirmation: false, confidence: command.confidence)
         case .askBloodPressure:
@@ -61,8 +65,9 @@ struct ResponseEngine {
         guard save() else {
             return HealthAssistantResponse(text: "I understood the sugar reading, but I could not save it locally just now. Please try again.", requiresConfirmation: false, confidence: command.confidence)
         }
+        writeHealthKitSideEffect(type: .bloodSugar, value1: value, value2: nil, date: .now)
         let comparison = comparisonEngine.sugarComparison(value: value, testType: testType, records: healthRecords)
-        return HealthAssistantResponse(text: "Got it. I saved your \(testType.title.lowercased()) sugar as \(Int(value)). \(comparison)", requiresConfirmation: false, confidence: command.confidence)
+        return HealthAssistantResponse(text: variationPool.sugarSaved(value: Int(value), context: testType.title.lowercased(), comparison: comparison) + healthKitSyncNote(for: .bloodSugar), requiresConfirmation: false, confidence: command.confidence)
     }
 
     private func logBloodPressure(_ command: ParsedHealthCommand) -> HealthAssistantResponse {
@@ -73,7 +78,20 @@ struct ResponseEngine {
         guard save() else {
             return HealthAssistantResponse(text: "I understood the BP reading, but I could not save it locally just now. Please try again.", requiresConfirmation: false, confidence: command.confidence)
         }
-        return HealthAssistantResponse(text: "Saved. Your BP is recorded as \(Int(command.numbers[0])) over \(Int(command.numbers[1])). This is based on your saved logs and is informational only.", requiresConfirmation: false, confidence: command.confidence)
+        writeHealthKitSideEffect(type: .bloodPressure, value1: command.numbers[0], value2: command.numbers[1], date: .now)
+        return HealthAssistantResponse(text: variationPool.bpSaved(systolic: Int(command.numbers[0]), diastolic: Int(command.numbers[1]), comparison: variationPool.safeComparison()) + healthKitSyncNote(for: .bloodPressure), requiresConfirmation: false, confidence: command.confidence)
+    }
+
+    private func logWeight(_ command: ParsedHealthCommand) -> HealthAssistantResponse {
+        guard let value = command.numbers.first else {
+            return HealthAssistantResponse(text: "Please say the weight again before I save it.", requiresConfirmation: true, confidence: command.confidence)
+        }
+        modelContext.insert(HealthRecord(type: .weight, value1: value, unit: "kg", notes: "Added by Human Voice Assistant"))
+        guard save() else {
+            return HealthAssistantResponse(text: "I understood the weight reading, but I could not save it locally just now. Please try again.", requiresConfirmation: false, confidence: command.confidence)
+        }
+        writeHealthKitSideEffect(type: .weight, value1: value, value2: nil, date: .now)
+        return HealthAssistantResponse(text: "Saved your weight as \(Int(value)) kg. This is informational only." + healthKitSyncNote(for: .weight), requiresConfirmation: false, confidence: command.confidence)
     }
 
     private func logSymptoms(_ command: ParsedHealthCommand, symptomLogs: [WomensHealthDailyLog]) -> HealthAssistantResponse {
@@ -83,7 +101,7 @@ struct ResponseEngine {
             return HealthAssistantResponse(text: "I understood the symptom log, but I could not save it locally just now. Please try again.", requiresConfirmation: false, confidence: command.confidence)
         }
         let repeated = repeatedSymptomMessage(symptoms: symptoms, logs: symptomLogs)
-        return HealthAssistantResponse(text: "I saved \(symptoms.joined(separator: " and ")) in your symptom log. \(repeated)If symptoms become severe, unusual, or continue, please consult a doctor.", requiresConfirmation: false, confidence: command.confidence)
+        return HealthAssistantResponse(text: "\(variationPool.symptomSaved(symptoms: symptoms.joined(separator: " and "))) \(repeated)", requiresConfirmation: false, confidence: command.confidence)
     }
 
     private func markMedicineTaken(command: ParsedHealthCommand, medicines: [Medicine]) -> HealthAssistantResponse {
@@ -94,7 +112,7 @@ struct ResponseEngine {
         guard save() else {
             return HealthAssistantResponse(text: "I found \(medicine.name), but I could not save the taken log locally just now. Please try again.", requiresConfirmation: false, confidence: 0.80)
         }
-        return HealthAssistantResponse(text: "Done. I marked \(medicine.name) as taken.", requiresConfirmation: false, confidence: 0.80)
+        return HealthAssistantResponse(text: variationPool.medicineTaken(medicine: medicine.name), requiresConfirmation: false, confidence: 0.80)
     }
 
     private func matchedMedicine(for command: ParsedHealthCommand, medicines: [Medicine]) -> Medicine? {
@@ -158,9 +176,76 @@ struct ResponseEngine {
     private func save() -> Bool {
         do {
             try modelContext.save()
+            NotificationCenter.default.post(name: .healthDataDidUpdate, object: nil)
             return true
         } catch {
             return false
         }
+    }
+
+    private func writeHealthKitSideEffect(type: HealthRecordType, value1: Double, value2: Double?, date: Date) {
+        guard UserHealthProfile.healthKitWriteEnabled else { return }
+        Task {
+            let service = HealthKitService()
+            service.refreshAuthorizationStatus()
+            let writeService = HealthKitWriteService(service: service)
+            let success: Bool
+            switch type {
+            case .bloodPressure:
+                guard let value2 else { return }
+                success = await writeService.writeBP(systolic: value1, diastolic: value2, date: date)
+            case .bloodSugar:
+                success = await writeService.writeBloodSugar(value: value1, date: date)
+            case .weight:
+                success = await writeService.writeWeight(kg: value1, date: date)
+            case .temperature:
+                success = await writeService.writeTemperature(celsius: value1, date: date)
+            case .oxygen:
+                success = await writeService.writeOxygen(percentage: value1, date: date)
+            case .heartRate:
+                success = await writeService.writeHeartRate(bpm: value1, date: date)
+            }
+            if !success {
+                print("[ResponseEngine] Apple Health write skipped or failed for \(type.rawValue)")
+            }
+        }
+    }
+
+    private func healthKitSyncNote(for type: HealthRecordType) -> String {
+        guard UserHealthProfile.healthKitWriteEnabled else { return "" }
+        let service = HealthKitService()
+        service.refreshAuthorizationStatus()
+        guard service.isAvailable else {
+            return " Saved in Tablets. Apple Health sync is off or unavailable."
+        }
+
+        switch type {
+        case .bloodPressure:
+            guard let systolic = HealthKitWriteAuthorization.quantityType(.bloodPressureSystolic),
+                  let diastolic = HealthKitWriteAuthorization.quantityType(.bloodPressureDiastolic),
+                  service.authorizationStatus(for: systolic) == .sharingAuthorized,
+                  service.authorizationStatus(for: diastolic) == .sharingAuthorized else {
+                return " Saved in Tablets. Apple Health sync is off or unavailable."
+            }
+        case .bloodSugar:
+            guard let glucose = HealthKitWriteAuthorization.quantityType(.bloodGlucose),
+                  service.authorizationStatus(for: glucose) == .sharingAuthorized else {
+                return " Saved in Tablets. Apple Health sync is off or unavailable."
+            }
+        case .weight:
+            guard let weight = HealthKitWriteAuthorization.quantityType(.bodyMass),
+                  service.authorizationStatus(for: weight) == .sharingAuthorized else {
+                return " Saved in Tablets. Apple Health sync is off or unavailable."
+            }
+        default:
+            return ""
+        }
+        return ""
+    }
+}
+
+private enum HealthKitWriteAuthorization {
+    static func quantityType(_ identifier: HKQuantityTypeIdentifier) -> HKQuantityType? {
+        HKQuantityType.quantityType(forIdentifier: identifier)
     }
 }

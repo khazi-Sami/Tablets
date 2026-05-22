@@ -37,6 +37,9 @@ struct MedicalBackgroundView<Content: View>: View {
 
             content
         }
+        .onAppear {
+            DebugStartupLogger.log("MedicalBackgroundView appeared auraColors=\(auraStyle.colors.count) medicineLogs=\(medicineLogs.count) healthRecords=\(healthRecords.count)")
+        }
     }
 
     private var auraStyle: HealthAuraStyle {

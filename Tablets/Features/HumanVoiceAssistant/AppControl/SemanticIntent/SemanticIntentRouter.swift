@@ -7,6 +7,7 @@ protocol SemanticIntentRouting {
 final class SemanticIntentRouter: SemanticIntentRouting {
     private let similarityEngine: IntentSimilarityScoring
     private let fallback = IntentRouterFallback()
+    private let phoneticMatcher = PhoneticMatcher()
 
     init(similarityEngine: IntentSimilarityScoring = IntentSimilarityEngine()) {
         self.similarityEngine = similarityEngine
@@ -18,12 +19,24 @@ final class SemanticIntentRouter: SemanticIntentRouting {
             return RouteResult(intent: .unknown, confidence: 0, rawTranscript: transcript, matchedExample: nil, needsConfirmation: false)
         }
 
-        if let match = await similarityEngine.bestMatch(for: transcript), match.intent != .unknown {
+        if let match = await similarityEngine.bestMatch(for: transcript), match.intent != .unknown, match.confidence >= 0.72 {
             return RouteResult(intent: match.intent, confidence: match.confidence, rawTranscript: transcript, matchedExample: match.matchedExample, needsConfirmation: match.needsConfirmation)
         }
 
         let fallbackResult = fallback.route(transcript)
-        return fallbackResult.confidence >= 0.58 ? fallbackResult : RouteResult(intent: .unknown, confidence: fallbackResult.confidence, rawTranscript: transcript, matchedExample: nil, needsConfirmation: false)
+        if fallbackResult.confidence >= 0.58 {
+            return fallbackResult
+        }
+
+        if let phonetic = phoneticMatcher.match(transcript) {
+            return RouteResult(intent: phonetic.intent, confidence: phonetic.confidence, rawTranscript: transcript, matchedExample: phonetic.matchedTerm, needsConfirmation: phonetic.confidence < 0.72)
+        }
+
+        if let match = await similarityEngine.bestMatch(for: transcript), match.intent != .unknown, match.confidence >= 0.55 {
+            return RouteResult(intent: match.intent, confidence: match.confidence, rawTranscript: transcript, matchedExample: match.matchedExample, needsConfirmation: true)
+        }
+
+        return RouteResult(intent: .unknown, confidence: fallbackResult.confidence, rawTranscript: transcript, matchedExample: nil, needsConfirmation: false)
     }
 
     private func normalize(_ transcript: String) -> String {

@@ -6,7 +6,7 @@ import SwiftUI
 final class AmbientIntelligenceViewModel: ObservableObject {
     private let habitEngine = HabitLearningEngine()
     private let analyzer = HealthRoutineAnalyzer()
-    private let reminderEngine = AdaptiveReminderEngine()
+    private let reminderEngine = AmbientAdaptiveReminderEngine()
 
     func state(
         medicineLogs: [MedicineLog],
@@ -88,6 +88,6 @@ enum AmbientIntelligenceBuilder {
             womensLogs: womensLogs,
             interactions: interactions
         )
-        return AdaptiveReminderEngine().recommendation(from: signals, elderlyMode: elderlyMode)
+        return AmbientAdaptiveReminderEngine().recommendation(from: signals, elderlyMode: elderlyMode)
     }
 }

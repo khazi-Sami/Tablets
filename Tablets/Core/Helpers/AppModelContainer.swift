@@ -21,6 +21,7 @@ enum AppModelContainer {
             HumanAssistantConversation.self,
             HumanAssistantPreference.self,
             HumanVoiceMemory.self,
+            CustomVoiceShortcut.self,
             UserHealthHabit.self,
             HealthPatternMemory.self,
             AssistantInteractionMemory.self,
