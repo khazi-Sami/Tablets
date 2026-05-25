@@ -24,6 +24,21 @@ enum AppNavigationIntent: Equatable {
     case openMedicineReminder
     case openDailyCheckIn
     case openSettings
+    case openPregnancyPlanning
+    case openPregnancySetup
+    case openPregnancyDashboard
+    case openPregnancySymptomLog
+    case openPregnancyWeightLog
+    case openBabyKickCounter
+    case openPregnancyAppointments
+    case openPregnancyWeekGuide
+    case openPregnancyMilestones
+    case openContractionTimer
+    case openPregnancyMoodLog
+    case openPregnancyTimeline
+    case openPregnancyWeightChart
+    case openBirthPlan
+    case openPregnancyNotes
     case goBack
     case helpGeneral
     case helpWithFeature(feature: String)
@@ -54,6 +69,21 @@ enum AppNavigationIntent: Equatable {
         case .openMedicineReminder: return "openMedicineReminder"
         case .openDailyCheckIn: return "openDailyCheckIn"
         case .openSettings: return "openSettings"
+        case .openPregnancyPlanning: return "openPregnancyPlanning"
+        case .openPregnancySetup: return "openPregnancySetup"
+        case .openPregnancyDashboard: return "openPregnancyDashboard"
+        case .openPregnancySymptomLog: return "openPregnancySymptomLog"
+        case .openPregnancyWeightLog: return "openPregnancyWeightLog"
+        case .openBabyKickCounter: return "openBabyKickCounter"
+        case .openPregnancyAppointments: return "openPregnancyAppointments"
+        case .openPregnancyWeekGuide: return "openPregnancyWeekGuide"
+        case .openPregnancyMilestones: return "openPregnancyMilestones"
+        case .openContractionTimer: return "openContractionTimer"
+        case .openPregnancyMoodLog: return "openPregnancyMoodLog"
+        case .openPregnancyTimeline: return "openPregnancyTimeline"
+        case .openPregnancyWeightChart: return "openPregnancyWeightChart"
+        case .openBirthPlan: return "openBirthPlan"
+        case .openPregnancyNotes: return "openPregnancyNotes"
         case .goBack: return "goBack"
         case .helpGeneral: return "helpGeneral"
         case .helpWithFeature(let feature): return "helpWithFeature:\(feature)"
@@ -86,6 +116,21 @@ enum AppNavigationIntent: Equatable {
         case "openMedicineReminder": self = .openMedicineReminder
         case "openDailyCheckIn": self = .openDailyCheckIn
         case "openSettings": self = .openSettings
+        case "openPregnancyPlanning": self = .openPregnancyPlanning
+        case "openPregnancySetup": self = .openPregnancySetup
+        case "openPregnancyDashboard": self = .openPregnancyDashboard
+        case "openPregnancySymptomLog": self = .openPregnancySymptomLog
+        case "openPregnancyWeightLog": self = .openPregnancyWeightLog
+        case "openBabyKickCounter": self = .openBabyKickCounter
+        case "openPregnancyAppointments": self = .openPregnancyAppointments
+        case "openPregnancyWeekGuide": self = .openPregnancyWeekGuide
+        case "openPregnancyMilestones": self = .openPregnancyMilestones
+        case "openContractionTimer": self = .openContractionTimer
+        case "openPregnancyMoodLog": self = .openPregnancyMoodLog
+        case "openPregnancyTimeline": self = .openPregnancyTimeline
+        case "openPregnancyWeightChart": self = .openPregnancyWeightChart
+        case "openBirthPlan": self = .openBirthPlan
+        case "openPregnancyNotes": self = .openPregnancyNotes
         case "goBack": self = .goBack
         case "helpGeneral": self = .helpGeneral
         default: self = .unknown

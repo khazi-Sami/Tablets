@@ -7,11 +7,63 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08A2AABC21386E945B58E0F8 /* TabletsWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C62ED30FEEA00E05FA7F1D4 /* TabletsWidgetProvider.swift */; };
+		23A40A2594E03A9DAD620A48 /* TabletsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0830FC0EB3117BE192DA2810 /* TabletsWidgetBundle.swift */; };
+		42028D33CD2FB267A2324FEF /* HomeScreenLargeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F0A88D2F1C908AA2495049 /* HomeScreenLargeView.swift */; };
+		4C38BA656F50E409D81F1C9E /* MedicineWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7CFED32C874A6ED41AFAB37 /* MedicineWidgetView.swift */; };
+		7AC0F91BD824FB69C4EFE180 /* MedicineLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE52F438FF584110AD854B5 /* MedicineLog.swift */; };
+		8285D9BEA1BBE1A6B4545F7D /* HomeScreenMediumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADF1E236EAFAD12A6F63EF2 /* HomeScreenMediumView.swift */; };
+		85539E5532AACF09E519F1FD /* TabletsWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AEBC1AD1820EB49F405DF978 /* TabletsWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		85BD5C8CB8F7CCBA215AF892 /* Medicine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130521A978FFF06EEF6BCE2 /* Medicine.swift */; };
+		980239F7ED857DFDD1624F59 /* LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A616467069E5BFB03ED4E41 /* LockScreenWidgetView.swift */; };
+		9A146D5B534BE44482E0751D /* WidgetBrandStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF9355B2A61DDACF17ED1AD /* WidgetBrandStyle.swift */; };
+		A859B562BFE6BD62EF2A79A9 /* ProgressRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88C56120B902D9F53E7FAF6 /* ProgressRingView.swift */; };
 		AA0000010000000000000001 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000020000000000000001 /* WhisperKit */; };
+		B97A107173467C39F363705B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E407D3884920B469A82A5C5 /* Foundation.framework */; };
+		C173E3023D661E95491E04D1 /* HomeScreenSmallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D48060642286747D0AD83551 /* HomeScreenSmallView.swift */; };
+		F153CB720D268000460D9110 /* MedicineWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D5C0536DF73E6D3C16E261 /* MedicineWidgetEntry.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		29BB142528574BF895C56061 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 916E88E72FB629870025F2A8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E0D375E075E0F7FA4193AC1;
+			remoteInfo = TabletsWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		762298B6EA174C7BAD7D2ED9 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				85539E5532AACF09E519F1FD /* TabletsWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		0830FC0EB3117BE192DA2810 /* TabletsWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TabletsWidgetBundle.swift; path = TabletsWidget/TabletsWidgetBundle.swift; sourceTree = "<group>"; };
+		23D5C0536DF73E6D3C16E261 /* MedicineWidgetEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MedicineWidgetEntry.swift; path = TabletsWidget/Models/MedicineWidgetEntry.swift; sourceTree = "<group>"; };
+		24F0A88D2F1C908AA2495049 /* HomeScreenLargeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeScreenLargeView.swift; path = TabletsWidget/Views/HomeScreenLargeView.swift; sourceTree = "<group>"; };
+		6C62ED30FEEA00E05FA7F1D4 /* TabletsWidgetProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TabletsWidgetProvider.swift; path = TabletsWidget/TabletsWidgetProvider.swift; sourceTree = "<group>"; };
+		6E407D3884920B469A82A5C5 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		8EF9355B2A61DDACF17ED1AD /* WidgetBrandStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WidgetBrandStyle.swift; path = TabletsWidget/Styles/WidgetBrandStyle.swift; sourceTree = "<group>"; };
 		916E88EF2FB629870025F2A8 /* Tablets.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tablets.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A616467069E5BFB03ED4E41 /* LockScreenWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LockScreenWidgetView.swift; path = TabletsWidget/Views/LockScreenWidgetView.swift; sourceTree = "<group>"; };
+		A130521A978FFF06EEF6BCE2 /* Medicine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Medicine.swift; path = Tablets/Data/Models/Medicine.swift; sourceTree = "<group>"; };
+		A7CFED32C874A6ED41AFAB37 /* MedicineWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MedicineWidgetView.swift; path = TabletsWidget/Views/MedicineWidgetView.swift; sourceTree = "<group>"; };
+		AEBC1AD1820EB49F405DF978 /* TabletsWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TabletsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B88C56120B902D9F53E7FAF6 /* ProgressRingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProgressRingView.swift; path = TabletsWidget/Components/ProgressRingView.swift; sourceTree = "<group>"; };
+		CADF1E236EAFAD12A6F63EF2 /* HomeScreenMediumView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeScreenMediumView.swift; path = TabletsWidget/Views/HomeScreenMediumView.swift; sourceTree = "<group>"; };
+		CBE52F438FF584110AD854B5 /* MedicineLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MedicineLog.swift; path = Tablets/Data/Models/MedicineLog.swift; sourceTree = "<group>"; };
+		D48060642286747D0AD83551 /* HomeScreenSmallView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeScreenSmallView.swift; path = TabletsWidget/Views/HomeScreenSmallView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +75,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7F9EB6F956D1CF2E97DCEF16 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B97A107173467C39F363705B /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		916E88EC2FB629870025F2A8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -34,11 +94,48 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BE90B370E82CF25D76061CE /* TabletsWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B88C56120B902D9F53E7FAF6 /* ProgressRingView.swift */,
+				23D5C0536DF73E6D3C16E261 /* MedicineWidgetEntry.swift */,
+				0830FC0EB3117BE192DA2810 /* TabletsWidgetBundle.swift */,
+				6C62ED30FEEA00E05FA7F1D4 /* TabletsWidgetProvider.swift */,
+				24F0A88D2F1C908AA2495049 /* HomeScreenLargeView.swift */,
+				CADF1E236EAFAD12A6F63EF2 /* HomeScreenMediumView.swift */,
+				D48060642286747D0AD83551 /* HomeScreenSmallView.swift */,
+				9A616467069E5BFB03ED4E41 /* LockScreenWidgetView.swift */,
+				A7CFED32C874A6ED41AFAB37 /* MedicineWidgetView.swift */,
+				A130521A978FFF06EEF6BCE2 /* Medicine.swift */,
+				CBE52F438FF584110AD854B5 /* MedicineLog.swift */,
+				0D1D598A06B2CA341E42E8BA /* Styles */,
+			);
+			name = TabletsWidget;
+			sourceTree = "<group>";
+		};
+		0D1D598A06B2CA341E42E8BA /* Styles */ = {
+			isa = PBXGroup;
+			children = (
+				8EF9355B2A61DDACF17ED1AD /* WidgetBrandStyle.swift */,
+			);
+			name = Styles;
+			sourceTree = "<group>";
+		};
+		13C41C0D25AC182373287271 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F30731FF890B24C93DDDED7F /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		916E88E62FB629870025F2A8 = {
 			isa = PBXGroup;
 			children = (
 				916E88F12FB629870025F2A8 /* Tablets */,
 				916E88F02FB629870025F2A8 /* Products */,
+				13C41C0D25AC182373287271 /* Frameworks */,
+				0BE90B370E82CF25D76061CE /* TabletsWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -46,13 +143,39 @@
 			isa = PBXGroup;
 			children = (
 				916E88EF2FB629870025F2A8 /* Tablets.app */,
+				AEBC1AD1820EB49F405DF978 /* TabletsWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F30731FF890B24C93DDDED7F /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				6E407D3884920B469A82A5C5 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5E0D375E075E0F7FA4193AC1 /* TabletsWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD24ECC9FF84307A66011B53 /* Build configuration list for PBXNativeTarget "TabletsWidget" */;
+			buildPhases = (
+				1B21AE147E59B76B41A0BFEE /* Sources */,
+				7F9EB6F956D1CF2E97DCEF16 /* Frameworks */,
+				D17D0B7BB4C03515A96EC79D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TabletsWidget;
+			productName = TabletsWidget;
+			productReference = AEBC1AD1820EB49F405DF978 /* TabletsWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		916E88EE2FB629870025F2A8 /* Tablets */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 916E88FC2FB6298A0025F2A8 /* Build configuration list for PBXNativeTarget "Tablets" */;
@@ -60,10 +183,12 @@
 				916E88EB2FB629870025F2A8 /* Sources */,
 				916E88EC2FB629870025F2A8 /* Frameworks */,
 				916E88ED2FB629870025F2A8 /* Resources */,
+				762298B6EA174C7BAD7D2ED9 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				78AA5DF308BE10A678254E22 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				916E88F12FB629870025F2A8 /* Tablets */,
@@ -86,6 +211,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					5E0D375E075E0F7FA4193AC1 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					916E88EE2FB629870025F2A8 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -109,6 +237,7 @@
 			projectRoot = "";
 			targets = (
 				916E88EE2FB629870025F2A8 /* Tablets */,
+				5E0D375E075E0F7FA4193AC1 /* TabletsWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -121,9 +250,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D17D0B7BB4C03515A96EC79D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		1B21AE147E59B76B41A0BFEE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A859B562BFE6BD62EF2A79A9 /* ProgressRingView.swift in Sources */,
+				F153CB720D268000460D9110 /* MedicineWidgetEntry.swift in Sources */,
+				23A40A2594E03A9DAD620A48 /* TabletsWidgetBundle.swift in Sources */,
+				08A2AABC21386E945B58E0F8 /* TabletsWidgetProvider.swift in Sources */,
+				42028D33CD2FB267A2324FEF /* HomeScreenLargeView.swift in Sources */,
+				8285D9BEA1BBE1A6B4545F7D /* HomeScreenMediumView.swift in Sources */,
+				C173E3023D661E95491E04D1 /* HomeScreenSmallView.swift in Sources */,
+				980239F7ED857DFDD1624F59 /* LockScreenWidgetView.swift in Sources */,
+				4C38BA656F50E409D81F1C9E /* MedicineWidgetView.swift in Sources */,
+				85BD5C8CB8F7CCBA215AF892 /* Medicine.swift in Sources */,
+				7AC0F91BD824FB69C4EFE180 /* MedicineLog.swift in Sources */,
+				9A146D5B534BE44482E0751D /* WidgetBrandStyle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		916E88EB2FB629870025F2A8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -133,7 +288,44 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		78AA5DF308BE10A678254E22 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TabletsWidget;
+			target = 5E0D375E075E0F7FA4193AC1 /* TabletsWidget */;
+			targetProxy = 29BB142528574BF895C56061 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		9047CB518F487AF9536E4313 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = TabletsWidget/TabletsWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Y2X42G855N;
+				EXECUTABLE_NAME = "$(EXECUTABLE_PREFIX)$(PRODUCT_NAME)$(EXECUTABLE_SUFFIX)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TabletsWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACH_O_TYPE = mh_execute;
+				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets.TabletsWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WRAPPER_EXTENSION = appex;
+			};
+			name = Debug;
+		};
 		916E88FA2FB6298A0025F2A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -187,7 +379,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -245,7 +437,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -333,6 +525,35 @@
 			};
 			name = Release;
 		};
+		E63DD767C818AF2976BB2FDB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = TabletsWidget/TabletsWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Y2X42G855N;
+				EXECUTABLE_NAME = "$(EXECUTABLE_PREFIX)$(PRODUCT_NAME)$(EXECUTABLE_SUFFIX)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TabletsWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACH_O_TYPE = mh_execute;
+				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets.TabletsWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				WRAPPER_EXTENSION = appex;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -350,6 +571,15 @@
 			buildConfigurations = (
 				916E88FD2FB6298A0025F2A8 /* Debug */,
 				916E88FE2FB6298A0025F2A8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CD24ECC9FF84307A66011B53 /* Build configuration list for PBXNativeTarget "TabletsWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E63DD767C818AF2976BB2FDB /* Release */,
+				9047CB518F487AF9536E4313 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

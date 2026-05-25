@@ -128,6 +128,7 @@ struct AppRootView: View {
         .onAppear {
             UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
             MedicineNotificationDelegate.shared.configure(modelContext: modelContext)
+            schedulePregnancyHydrationIfNeeded()
             DebugStartupLogger.log("AppRootView.onAppear selectedTab=\(router.selectedTab.title) healthKitEnabled=\(UserHealthProfile.healthKitEnabled) modelReady=\(WhisperModelManager.shared.isReady)")
         }
         .onChange(of: router.selectedTab) { _, newValue in
@@ -147,6 +148,9 @@ struct AppRootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openMedicineReminder)) { _ in
             router.selectedTab = .medicines
+        }
+        .onOpenURL { url in
+            handleDeepLink(url)
         }
         .onReceive(NotificationCenter.default.publisher(for: .dashboardVoicePhraseRequested)) { notification in
             guard let phrase = notification.object as? String else { return }
@@ -176,6 +180,20 @@ struct AppRootView: View {
             setIdleSoon()
         case .error:
             startInlineListening()
+        }
+    }
+
+    private func schedulePregnancyHydrationIfNeeded() {
+        let descriptor = FetchDescriptor<PregnancyProfile>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        guard let profiles = try? modelContext.fetch(descriptor),
+              let profile = profiles.first(where: \.isActive),
+              profile.hydrationRemindersEnabled != false else { return }
+        Task {
+            let result = await PregnancyHydrationService().scheduleHydrationReminders(for: profile)
+            if result != .scheduled {
+                profile.hydrationRemindersEnabled = false
+                try? modelContext.save()
+            }
         }
     }
 
@@ -381,6 +399,32 @@ struct AppRootView: View {
     private func sleep(seconds: TimeInterval) async {
         let nanoseconds = UInt64(max(seconds, 0) * 1_000_000_000)
         try? await Task.sleep(nanoseconds: nanoseconds)
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme?.lowercased() == "tablets" else { return }
+
+        let host = url.host?.lowercased()
+        switch host {
+        case "medicine":
+            router.selectedTab = .medicines
+            let medicineID = url.pathComponents.dropFirst().first
+            var userInfo: [String: Any] = [:]
+            if let medicineID {
+                userInfo["medicineID"] = medicineID
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                NotificationCenter.default.post(
+                    name: VoiceNavigationNotification.openMedicineReminder,
+                    object: nil,
+                    userInfo: userInfo
+                )
+            }
+        case "medicines":
+            router.selectedTab = .medicines
+        default:
+            router.selectedTab = .dashboard
+        }
     }
 }
 

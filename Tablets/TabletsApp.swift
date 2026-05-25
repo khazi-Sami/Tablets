@@ -7,24 +7,49 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct TabletsApp: App {
-    private let sharedModelContainer = AppModelContainer.make()
+    @State private var modelContainerState = AppModelContainer.makeState()
 
     init() {
         DebugStartupLogger.log("TabletsApp.init started")
         AppTheme.configureAppearance()
+        UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
         DebugStartupLogger.log("AppTheme configured")
     }
 
     var body: some Scene {
         WindowGroup {
+            rootView
+        }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+        switch modelContainerState {
+        case .loaded(let container):
             AppRootView()
+                .modelContainer(container)
                 .onAppear {
                     DebugStartupLogger.log("WindowGroup root AppRootView appeared")
                 }
+        case .failed(let error):
+            AppModelContainerErrorView(
+                error: error,
+                retry: {
+                    modelContainerState = AppModelContainer.makeState()
+                },
+                resetLocalData: {
+                    do {
+                        try AppModelContainer.resetLocalStoreForRecovery()
+                        modelContainerState = AppModelContainer.makeState()
+                    } catch {
+                        modelContainerState = .failed(.from(error))
+                    }
+                }
+            )
         }
-        .modelContainer(sharedModelContainer)
     }
 }

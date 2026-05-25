@@ -142,6 +142,15 @@ enum HealthVoiceIntent: String, Codable, CaseIterable, Identifiable {
     case reminderRequest
     case startPeriod
     case weeklyHealth
+    case logPregnancyWeight
+    case logBabyKick
+    case logPregnancySymptom
+    case askPregnancyWeek
+    case askDueDate
+    case startContraction
+    case stopContraction
+    case logPregnancyMood
+    case logPregnancyNote
     case unknown
 
     var id: String { rawValue }

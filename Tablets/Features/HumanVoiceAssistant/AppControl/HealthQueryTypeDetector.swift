@@ -16,6 +16,11 @@ enum HealthQueryType {
     case periodNext
     case periodCycle
     case doctorNext
+    case babyStatus
+    case pregnancy
+    case pregnancyHydrationReminder(minutes: Int)
+    case pregnancySupplements
+    case pregnancyNutrition
     case healthSummary
     case unknown
 }
@@ -28,6 +33,10 @@ final class HealthQueryTypeDetector {
         let hasSugar = containsAny(text, ["sugar", "blood sugar", "glucose", "diabetes", "diabetic", "hba1c", "is my sugar under control", "how is my diabetes doing", "sugar kitna tha", "sugar kaisa hai", "sugar this month", "was my sugar high today", "fasting sugar average", "after food sugar average", "sugar before meal average", "sugar getting better", "diabetes in control", "sugar comparison", "highest sugar recorded", "lowest sugar recorded", "sugar trend this week", "sugar trend this month", "how has my sugar been"])
         let hasMedicine = containsAny(text, ["medicine", "tablet", "pill", "dose", "pending", "taken", "goli", "dawa", "dawai", "which tablet should i take now", "tablet abhi kaunsa", "kya tablet lena hai abhi", "medicine time kya hai", "tablet schedule today", "did i miss any tablet", "which medicine for morning", "which medicine for night", "tablet for this afternoon", "medicine for this evening", "koi tablet pending hai kya", "have i taken all tablets today", "medicine log for today", "todays dose", "did i take all my tablets", "how many tablets left today", "tablet history today", "medicine history today"])
         let hasPeriod = containsAny(text, ["period", "cycle", "monthly", "menstrual", "mahwari", "masik", "period kab aaya tha", "last period kab tha", "period kitne din baad", "cycle kitna lamba hai", "agla period kab aayega", "period late hai kya", "am i late this month", "how many days since my last period", "is my period regular", "cycle length average", "when did my last period end", "how long did my last period last", "period ke kitne din baad", "ovulation kab tha", "fertile window kab hai", "next fertile window", "is my cycle regular"])
+        let hasBabyStatus = containsAny(text, ["how is baby doing", "how is my baby", "baby status", "baby update", "how is baby today", "what is baby doing", "baby doing okay", "check on baby", "baby check in", "baby ki khabar", "baby kaisa hai", "baby theek hai", "how is little one"])
+        let hasPregnancy = containsAny(text, ["how many weeks pregnant", "what week am i on", "when is my due date", "how long until my due date", "how far along am i", "baby size this week", "what is baby doing this week", "pregnancy week", "pregnancy", "pregnant", "due date", "delivery", "kitne hafte", "baby size", "baby development"])
+        let hasSupplement = containsAny(text, ["what supplements should i take", "pregnancy vitamins", "folic acid reminder", "prenatal vitamin", "prenatal vitamins", "pregnancy supplements", "pregnancy supplement"])
+        let hasNutrition = containsAny(text, ["what should i eat", "pregnancy food", "what to eat during pregnancy", "healthy food for pregnancy", "pregnancy diet", "what is good to eat", "food for baby", "nutrients for pregnancy", "pregnancy nutrition", "kya khana chahiye", "pregnancy mein kya khaye", "baby ke liye kya khaye"])
         let hasDoctor = containsAny(text, ["doctor", "clinic", "checkup", "appointment", "next appointment kab hai", "doctor appointment kab hai", "when do i see doctor next", "when was my last doctor visit", "doctor se kab mila tha", "hospital kab jana hai", "clinic appointment kab hai", "medical checkup kab hai", "upcoming appointment", "past appointments"])
         let hasAverage = containsAny(text, ["average", "weekly", "this week", "last week", "this month"])
         let hasComparison = containsAny(text, ["compare", "compared", "better than", "worse", "improved", "stable", "yesterday", "last time", "last week", "this week"])
@@ -56,6 +65,26 @@ final class HealthQueryTypeDetector {
             if containsAny(text, ["next", "when", "which tablet now", "tablet abhi kaunsa", "kya tablet lena hai", "medicine time kya hai", "which medicine morning", "which medicine night", "tablet for afternoon", "medicine for evening"]) { return .medicineNext }
             if containsAny(text, ["pending", "should i take", "miss", "koi tablet pending hai", "did i miss my tablet", "tablet schedule today", "dose today"]) { return .medicinePending }
             return .medicinePending
+        }
+
+        if containsAny(text, ["remind me to drink water in", "water reminder in", "remind me to hydrate in"]) {
+            return .pregnancyHydrationReminder(minutes: Int(numbers.first ?? 20))
+        }
+
+        if hasBabyStatus {
+            return .babyStatus
+        }
+
+        if hasSupplement {
+            return .pregnancySupplements
+        }
+
+        if hasNutrition {
+            return .pregnancyNutrition
+        }
+
+        if hasPregnancy {
+            return .pregnancy
         }
 
         if hasPeriod {
@@ -95,6 +124,13 @@ final class HealthQueryTypeDetector {
             ("hospital kab jana hai", "when is my next doctor appointment"),
             ("clinic appointment kab hai", "when is my next doctor appointment"),
             ("medical checkup kab hai", "when is my next doctor appointment"),
+            ("due date kab hai", "when is my due date"),
+            ("delivery kab hai", "when is my due date"),
+            ("kitne hafte ho gaye", "how many weeks pregnant"),
+            ("baby kitna bada hai", "baby size this week"),
+            ("baby ki khabar", "how is baby doing"),
+            ("baby kaisa hai", "how is baby doing"),
+            ("baby theek hai", "how is baby doing"),
             ("health summary batao", "give me health summary"),
             ("health update do", "health update"),
             ("overall health kaisa hai", "how is my health"),

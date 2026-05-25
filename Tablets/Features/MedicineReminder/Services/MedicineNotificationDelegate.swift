@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import UserNotifications
+import WidgetKit
 
 @MainActor
 final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
@@ -66,9 +67,96 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
         if payload.isMissedDoseFollowUp {
             debugLog("Follow-up tapped id=\(request.identifier)")
             routeToMedicineReminder(payload: payload)
+        } else if handleAction(response.actionIdentifier, payload: payload) {
+            debugLog("Handled notification action \(response.actionIdentifier) id=\(request.identifier)")
         } else {
             debugLog("Primary reminder tapped id=\(request.identifier)")
             routeToMedicineReminder(payload: payload)
+        }
+    }
+
+    private func handleAction(_ actionIdentifier: String, payload: MedicineNotificationPayload) -> Bool {
+        switch actionIdentifier {
+        case RichNotificationController.takenActionIdentifier:
+            saveLog(payload: payload, status: .taken)
+            return true
+        case RichNotificationController.snoozeActionIdentifier:
+            saveLog(payload: payload, status: .snoozed)
+            scheduleSnooze(payload: payload)
+            return true
+        case RichNotificationController.skipActionIdentifier:
+            saveLog(payload: payload, status: .skipped)
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func saveLog(payload: MedicineNotificationPayload, status: MedicineLogStatus) {
+        guard let modelContext,
+              let uuid = UUID(uuidString: payload.medicineID)
+        else {
+            debugLog("Cannot save action log; missing context or bad medicineID")
+            return
+        }
+
+        var descriptor = FetchDescriptor<Medicine>(
+            predicate: #Predicate<Medicine> { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+
+        do {
+            guard let medicine = try modelContext.fetch(descriptor).first else {
+                debugLog("Cannot save action log; medicine not found")
+                return
+            }
+            let scheduledAt = payload.scheduledTime ?? Date()
+            let log = MedicineLog(
+                medicine: medicine,
+                scheduledTime: scheduledAt,
+                takenTime: status == .taken ? Date() : nil,
+                status: status
+            )
+            modelContext.insert(log)
+            try modelContext.save()
+            MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(
+                for: payload.medicineID,
+                scheduledTimeKey: payload.scheduledTimeKey,
+                date: scheduledAt
+            )
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            debugLog("Notification action save failed: \(error)")
+        }
+    }
+
+    private func scheduleSnooze(payload: MedicineNotificationPayload) {
+        guard let medicineName = fetchMedicineName(medicineID: payload.medicineID) else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Time for \(medicineName)"
+        content.body = "Just checking in again."
+        content.sound = .default
+        content.categoryIdentifier = RichNotificationController.categoryIdentifier
+        content.userInfo = [
+            "medicineID": payload.medicineID,
+            "scheduledTime": isoFormatter.string(from: Date()),
+            "scheduledTimeKey": payload.scheduledTimeKey,
+            "isMissedDoseFollowUp": false
+        ]
+
+        let request = UNNotificationRequest(
+            identifier: "medicine_snooze_\(payload.medicineID)_\(payload.scheduledTimeKey)_\(Int(Date().timeIntervalSince1970))",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 600, repeats: false)
+        )
+
+        Task {
+            do {
+                try await UNUserNotificationCenter.current().add(request)
+            } catch {
+                debugLog("Snooze scheduling failed: \(error)")
+            }
         }
     }
 

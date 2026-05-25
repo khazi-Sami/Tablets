@@ -30,6 +30,7 @@ struct MedicineNotificationScheduler {
     }
 
     func requestPermissionIfNeeded() async -> Bool {
+        configureMedicineNotificationCategory()
         let settings = await notificationCenter.notificationSettings()
         debugLog("Authorization status before scheduling: \(authorizationStatusText(settings.authorizationStatus))")
         switch settings.authorizationStatus {
@@ -164,7 +165,7 @@ struct MedicineNotificationScheduler {
         content.title = "Time for \(medicine.name)"
         content.body = bodyText(for: medicine)
         content.sound = .default
-        content.categoryIdentifier = "MEDICINE_REMINDER"
+        content.categoryIdentifier = RichNotificationController.categoryIdentifier
         content.userInfo = [
             "medicineID": medicineID,
             "scheduledTime": ISO8601DateFormatter().string(from: scheduledDate),
@@ -184,6 +185,31 @@ struct MedicineNotificationScheduler {
         let instruction = medicine.instruction.title
         guard !medicine.dosage.isEmpty else { return instruction }
         return "\(medicine.dosage) • \(instruction)"
+    }
+
+    private func configureMedicineNotificationCategory() {
+        let taken = UNNotificationAction(
+            identifier: RichNotificationController.takenActionIdentifier,
+            title: "Mark Taken",
+            options: [.foreground, .authenticationRequired]
+        )
+        let snooze = UNNotificationAction(
+            identifier: RichNotificationController.snoozeActionIdentifier,
+            title: "Snooze 10",
+            options: [.foreground]
+        )
+        let skip = UNNotificationAction(
+            identifier: RichNotificationController.skipActionIdentifier,
+            title: "Skip",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: RichNotificationController.categoryIdentifier,
+            actions: [taken, snooze, skip],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+        notificationCenter.setNotificationCategories([category])
     }
 
     private func trigger(for medicine: Medicine, scheduledDate: Date) -> UNNotificationTrigger {

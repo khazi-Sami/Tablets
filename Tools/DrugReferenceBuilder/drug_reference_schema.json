@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tablets Drug Reference",
+  "type": "object",
+  "required": ["version", "lastUpdated", "sourceNote", "sourceFiles", "medicines"],
+  "properties": {
+    "version": { "type": "string" },
+    "lastUpdated": { "type": "string" },
+    "sourceNote": { "type": "string" },
+    "sourceFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "url": { "type": "string" },
+          "downloadedAt": { "type": "string" }
+        }
+      }
+    },
+    "medicines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "displayName", "genericName", "brandNames", "synonyms", "dosageForms", "commonUses", "safetyNotes", "source", "lastUpdated"],
+        "properties": {
+          "id": { "type": "string" },
+          "displayName": { "type": "string" },
+          "genericName": { "type": "string" },
+          "brandNames": { "type": "array", "items": { "type": "string" } },
+          "synonyms": { "type": "array", "items": { "type": "string" } },
+          "dosageForms": { "type": "array", "items": { "type": "string" } },
+          "commonUses": { "type": "array", "items": { "type": "string" } },
+          "safetyNotes": { "type": "array", "items": { "type": "string" } },
+          "source": { "type": "string" },
+          "lastUpdated": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+

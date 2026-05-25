@@ -45,6 +45,12 @@ struct HealthTrackingView: View {
                             .healthEntrance(didAppear: didAppear, delay: 0.07)
                         }
 
+                        AlertsWidgetView(alerts: viewModel.activeSafetyAlerts(from: records)) {
+                            HapticsManager.selection()
+                            viewModel.isShowingAlertHistory = true
+                        }
+                        .healthEntrance(didAppear: didAppear, delay: 0.075)
+
                         LazyVGrid(columns: columns, spacing: Spacing.small) {
                             ForEach(Array(HealthRecordType.allCases.enumerated()), id: \.element.id) { index, type in
                                 HealthMetricTile(
@@ -116,6 +122,14 @@ struct HealthTrackingView: View {
 
                     Button {
                         HapticsManager.selection()
+                        viewModel.isShowingAlertHistory = true
+                    } label: {
+                        Image(systemName: "checkmark.shield.fill")
+                    }
+                    .accessibilityLabel("Safety Alert History")
+
+                    Button {
+                        HapticsManager.selection()
                         viewModel.selectedAddType = .bloodPressure
                     } label: {
                         Image(systemName: "plus")
@@ -137,6 +151,9 @@ struct HealthTrackingView: View {
             }
             .sheet(isPresented: $viewModel.isShowingInsights) {
                 HealthInsightsView(records: records)
+            }
+            .sheet(isPresented: $viewModel.isShowingAlertHistory) {
+                AlertHistoryView()
             }
             .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openSugarTracking)) { _ in
                 viewModel.isShowingDiabetes = true

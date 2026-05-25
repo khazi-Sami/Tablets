@@ -316,6 +316,12 @@ final class VoiceSessionManager: ObservableObject {
             return command.numbers.count >= 2
         case .logSymptoms:
             return !command.symptoms.isEmpty
+        case .logPregnancyWeight:
+            return !command.numbers.isEmpty
+        case .logBabyKick, .logPregnancySymptom:
+            return true
+        case .startContraction, .stopContraction, .logPregnancyMood, .logPregnancyNote:
+            return true
         case .medicineTaken, .startPeriod:
             return true
         default:

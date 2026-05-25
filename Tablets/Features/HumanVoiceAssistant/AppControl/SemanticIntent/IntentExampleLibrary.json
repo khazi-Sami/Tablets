@@ -1730,5 +1730,164 @@
       "neend kaisi thi",
       "dhadkan"
     ]
+  },
+  {
+    "intentId": "openPregnancyPlanning",
+    "displayName": "Pregnancy & Planning",
+    "category": "navigation",
+    "responseTemplate": "Opening your pregnancy journey.",
+    "examples": [
+      "open pregnancy",
+      "pregnancy section",
+      "pregnancy planning",
+      "open pregnancy planning",
+      "pregnancy tracker",
+      "open pregnancy tracker",
+      "baby tracker",
+      "open baby tracker",
+      "i am pregnant",
+      "track my pregnancy",
+      "pregnancy journey",
+      "open pregnancy journey",
+      "maternal health",
+      "open maternal health",
+      "baby development",
+      "show pregnancy",
+      "pregnancy page",
+      "baby section",
+      "open baby section",
+      "show baby tracker",
+      "pregnancy and planning",
+      "planning pregnancy",
+      "expecting",
+      "i am expecting",
+      "pregnancy dashboard",
+      "open pregnancy dashboard",
+      "baby kicks",
+      "kick counter",
+      "open kick counter",
+      "count baby kicks",
+      "pregnancy weight",
+      "log pregnancy weight",
+      "pregnancy symptoms",
+      "log pregnancy symptoms",
+      "pregnancy appointment",
+      "my pregnancy appointment",
+      "week guide",
+      "pregnancy week guide",
+      "what week am i",
+      "how many weeks pregnant",
+      "baby size this week",
+      "baby development this week",
+      "pregnancy milestones",
+      "show milestones",
+      "garbh",
+      "pregnancy ka section",
+      "baby ka section",
+      "pregnant hoon",
+      "pregnancy track karna hai",
+      "how is baby doing",
+      "how is my baby",
+      "baby status",
+      "baby update",
+      "how is baby today",
+      "what is baby doing",
+      "baby doing okay",
+      "check on baby",
+      "baby check in",
+      "baby ki khabar",
+      "baby kaisa hai",
+      "baby theek hai",
+      "how is little one",
+      "remind me to drink water in 20 minutes",
+      "water reminder in 30 minutes",
+      "remind me to hydrate in 15 minutes",
+      "what supplements should i take",
+      "pregnancy vitamins",
+      "folic acid reminder",
+      "pregnancy supplements"
+    ]
+  },
+  {
+    "intentId": "openContractionTimer",
+    "displayName": "ContractionTimer",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "contraction timer",
+      "track contractions",
+      "start contraction timer",
+      "open contraction tracker",
+      "labour timer",
+      "contraction started",
+      "contraction tracker",
+      "open contraction timer"
+    ]
+  },
+  {
+    "intentId": "openPregnancyMoodLog",
+    "displayName": "Pregnancy MoodLog",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "log my mood",
+      "pregnancy mood",
+      "how am i feeling",
+      "mood tracker pregnancy",
+      "i am feeling anxious",
+      "i feel tired",
+      "mood log"
+    ]
+  },
+  {
+    "intentId": "openPregnancyTimeline",
+    "displayName": "Pregnancy Timeline",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "pregnancy timeline",
+      "my pregnancy history",
+      "show my pregnancy journey",
+      "pregnancy log history"
+    ]
+  },
+  {
+    "intentId": "openBirthPlan",
+    "displayName": "BirthPlan",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "birth plan",
+      "open birth plan",
+      "create birth plan",
+      "my birth plan",
+      "delivery plan",
+      "birth preferences"
+    ]
+  },
+  {
+    "intentId": "openPregnancyNotes",
+    "displayName": "Pregnancy Notes",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "pregnancy notes",
+      "quick note",
+      "note for doctor",
+      "my pregnancy notes",
+      "saved notes",
+      "questions for doctor"
+    ]
+  },
+  {
+    "intentId": "openPregnancyWeightChart",
+    "displayName": "Pregnancy WeightChart",
+    "category": "navigation",
+    "responseTemplate": "Opening.",
+    "examples": [
+      "pregnancy weight chart",
+      "open pregnancy weight chart",
+      "weight chart pregnancy"
+    ]
   }
 ]

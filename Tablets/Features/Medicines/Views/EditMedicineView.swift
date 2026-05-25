@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 import UIKit
+import WidgetKit
 
 struct EditMedicineView: View {
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +22,7 @@ struct EditMedicineView: View {
     @State private var errorMessage: String?
     @State private var notificationMessage: String?
     @State private var showAdvancedOptions = false
+    @State private var selectedDrugReference: DrugReferenceEntry?
 
     init(medicine: Medicine) {
         self.medicine = medicine
@@ -50,9 +52,11 @@ struct EditMedicineView: View {
                     }
                     .padding(Spacing.medium)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .safeAreaInset(edge: .bottom) {
                     saveBar
                 }
+                .dismissKeyboardOnTap()
             }
             .navigationTitle("Edit Medicine")
             .navigationBarTitleDisplayMode(.inline)
@@ -72,7 +76,12 @@ struct EditMedicineView: View {
     private var detailsSection: some View {
         EditSection(title: "Medicine details") {
             VStack(spacing: Spacing.small) {
-                EditTextField(title: "Medicine name", text: $name, systemImage: "pills.fill")
+                DrugAutocompleteField(
+                    title: "Medicine name",
+                    placeholder: "Medicine name",
+                    text: $name,
+                    selectedEntry: $selectedDrugReference
+                )
                 EditTextField(title: "Dosage", text: $dosage, systemImage: "cross.circle.fill")
             }
         }
@@ -239,6 +248,7 @@ struct EditMedicineView: View {
                 notificationMessage = "Notifications are off. Turn them on to receive medicine reminders."
                 return
             }
+            WidgetCenter.shared.reloadAllTimelines()
             dismiss()
         }
     }

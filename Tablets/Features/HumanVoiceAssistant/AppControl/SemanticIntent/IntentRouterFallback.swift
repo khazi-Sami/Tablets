@@ -94,6 +94,55 @@ struct IntentRouterFallback {
             "my bp", "my pressure", "my tension"
         ]) { return .openBPTracking }
 
+        // Pregnancy & Planning
+        if has(text, [
+            "contraction timer", "track contractions", "start contraction timer",
+            "open contraction tracker", "labour timer", "contraction tracker",
+            "start contraction", "contraction started", "contraction ended"
+        ]) { return .openContractionTimer }
+
+        if has(text, [
+            "log my mood", "pregnancy mood", "how am i feeling",
+            "mood tracker pregnancy", "i am feeling anxious", "i feel tired",
+            "mood log"
+        ]) { return .openPregnancyMoodLog }
+
+        if has(text, [
+            "pregnancy timeline", "my pregnancy history",
+            "show my pregnancy journey", "pregnancy log history",
+            "pregnancy history"
+        ]) { return .openPregnancyTimeline }
+
+        if has(text, [
+            "pregnancy weight chart", "weight chart pregnancy",
+            "pregnancy weight graph", "show pregnancy weight"
+        ]) { return .openPregnancyWeightChart }
+
+        if has(text, [
+            "birth plan", "open birth plan", "create birth plan",
+            "my birth plan", "delivery plan", "birth preferences"
+        ]) { return .openBirthPlan }
+
+        if has(text, [
+            "pregnancy notes", "quick note", "note for doctor",
+            "my pregnancy notes", "saved notes", "questions for doctor"
+        ]) { return .openPregnancyNotes }
+
+        if has(text, [
+            "pregnancy", "pregnant", "expecting", "maternity",
+            "baby tracker", "baby section", "baby kick",
+            "kick counter", "count kick", "baby development",
+            "pregnancy planning", "pregnancy tracker",
+            "pregnancy weight", "pregnancy symptom",
+            "pregnancy appointment", "how many weeks",
+            "what week pregnant", "week guide pregnancy",
+            "pregnancy journey", "pregnancy milestone",
+            "baby size", "due date", "garbh",
+            "pregnancy ka", "baby ka section",
+            "pregnant hoon", "baby aa raha",
+            "baby aa rahi", "pregnancy track"
+        ]) { return .openPregnancyPlanning }
+
         // Add Period Log
         if has(text, [
             "start period", "period started", "period today",

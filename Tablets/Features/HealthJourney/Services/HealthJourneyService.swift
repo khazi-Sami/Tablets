@@ -99,7 +99,7 @@ struct HealthJourneyService {
         items.append(
             JourneyFeedItem(
                 kind: .encouragement,
-                title: "You are building healthy habits",
+                title: "You are building steady care habits",
                 subtitle: "Your journey is made of small caring moments.",
                 date: .now,
                 symbol: "sparkles",
@@ -159,7 +159,7 @@ struct HealthJourneyService {
     }
 
     func insights(streaks: HealthStreakSummary, feed: [JourneyFeedItem]) -> [String] {
-        var insights = ["You're building a healthy routine, one gentle check-in at a time."]
+        var insights = ["You're building a steady care routine, one gentle check-in at a time."]
 
         if streaks.medicine >= 3 {
             insights.append("Your medicine tracking is becoming consistent based on your saved logs.")

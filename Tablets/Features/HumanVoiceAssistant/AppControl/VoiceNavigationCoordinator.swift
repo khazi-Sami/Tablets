@@ -77,6 +77,57 @@ final class VoiceNavigationCoordinator: ObservableObject {
         case .openSettings:
             appRouter.selectedTab = .more
             await postAfterTabChange(VoiceNavigationNotification.openSettings)
+        case .openPregnancyPlanning, .openPregnancySetup, .openPregnancyDashboard:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+        case .openPregnancySymptomLog:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancySymptomLog)
+        case .openPregnancyWeightLog:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyWeightLog)
+        case .openBabyKickCounter:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenBabyKickCounter)
+        case .openPregnancyAppointments:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyAppointments)
+        case .openPregnancyWeekGuide:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyWeekGuide)
+        case .openPregnancyMilestones:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyMilestones)
+        case .openContractionTimer:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenContractionTimer)
+        case .openPregnancyMoodLog:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyMoodLog)
+        case .openPregnancyTimeline:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyTimeline)
+        case .openPregnancyWeightChart:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyWeightChart)
+        case .openBirthPlan:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenBirthPlan)
+        case .openPregnancyNotes:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(.voiceOpenPregnancyPlanning)
+            await postAfterTabChange(.voiceOpenPregnancyNotes)
         case .goBack:
             await goBack()
             return

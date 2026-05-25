@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 import UIKit
+import WidgetKit
 
 @MainActor
 @Observable
@@ -63,6 +64,7 @@ final class MedicineReminderViewModel {
         do {
             try modelContext.save()
             cancelFollowUpIfNeeded(for: medicine, scheduledAt: log.scheduledTime, status: status, modelContext: modelContext)
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             caringMessage = "I could not save this reminder just now. Please try again."
             HapticsManager.notification(.error)

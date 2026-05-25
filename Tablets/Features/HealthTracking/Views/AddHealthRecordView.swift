@@ -18,14 +18,20 @@ struct AddHealthRecordView: View {
                         VStack(spacing: Spacing.large) {
                             typePicker
                             inputCard
+                            if let alert = viewModel.latestSafetyAlert {
+                                HealthAlertView(alert: alert)
+                            }
                             notesCard
                             Color.clear.frame(height: 90)
                         }
                         .padding(Spacing.medium)
                     }
+                    .scrollDismissesKeyboard(.interactively)
+                    .dismissKeyboardOnTap()
                     CapsuleButton("Save Record", systemImage: "checkmark.circle.fill") {
                         if viewModel.save(modelContext: modelContext) {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { dismiss() }
+                            let delay = viewModel.latestSafetyAlert == nil ? 0.6 : 3.0
+                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { dismiss() }
                         }
                     }
                     .padding(Spacing.medium)

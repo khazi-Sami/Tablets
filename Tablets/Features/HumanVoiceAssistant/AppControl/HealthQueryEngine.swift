@@ -41,6 +41,32 @@ final class HealthQueryEngine: HealthQueryAnswering {
             return periodAnswer(modelContext: modelContext, mode: .cycle)
         case .doctorNext:
             return doctorAnswer(modelContext: modelContext)
+        case .babyStatus:
+            return BabyStatusEngine().getBabyStatusSummary(context: modelContext)
+        case .pregnancy:
+            return answerPregnancyQuery(transcript, context: modelContext)
+        case .pregnancyHydrationReminder(let minutes):
+            let profiles = fetch(modelContext, descriptor: FetchDescriptor<PregnancyProfile>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+            guard let profile = profiles.first(where: \.isActive) else {
+                return "I don't have pregnancy information saved yet. Say Open pregnancy to set up your journey."
+            }
+            guard profile.hydrationRemindersEnabled != false else {
+                PregnancyHydrationService().cancelAllHydrationReminders()
+                return "Hydration reminders are turned off. Turn them on in Pregnancy and Planning before setting a water reminder."
+            }
+            let result = await PregnancyHydrationService().scheduleQuickReminder(minutes: minutes)
+            switch result {
+            case .scheduled:
+                return "Done. I'll remind you to drink water in \(minutes) minute\(minutes == 1 ? "" : "s"). This is informational only — please follow your doctor's guidance."
+            case .denied:
+                return "Notifications are off. Turn them on in Settings to use hydration reminders."
+            case .failed:
+                return "I could not schedule that water reminder just now. Please try again."
+            }
+        case .pregnancySupplements:
+            return pregnancySupplementAnswer(modelContext: modelContext)
+        case .pregnancyNutrition:
+            return pregnancyNutritionAnswer(modelContext: modelContext, query: transcript)
         case .healthSummary:
             return healthSummaryAnswer(modelContext: modelContext)
         case .unknown:
@@ -156,6 +182,33 @@ final class HealthQueryEngine: HealthQueryAnswering {
             return "Your next saved doctor visit is with \(doctor) on \(upcoming.appointmentDate.formatted(date: .abbreviated, time: .shortened))."
         }
         return NoData.doctor
+    }
+
+    func answerPregnancyQuery(_ query: String, context: ModelContext) -> String {
+        let profiles = fetch(context, descriptor: FetchDescriptor<PregnancyProfile>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+        guard let profile = profiles.first(where: \.isActive) else {
+            return "I don't have any pregnancy information saved yet. You can set up your pregnancy journey by saying Open pregnancy and I'll take you there."
+        }
+        let week = max(1, min(42, profile.currentWeek))
+        let info = PregnancyWeekGuide.info(for: week)
+        let days = max(0, Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: .now), to: Calendar.current.startOfDay(for: profile.dueDate)).day ?? 0)
+        return "You are in week \(week) of your pregnancy. Your baby is about the size of a \(info.fruitComparison) this week. \(info.babyDevelopment) Your due date is \(profile.dueDate.formatted(date: .abbreviated, time: .omitted)), which is \(days) days away. This is informational only — please follow your doctor's guidance throughout your pregnancy."
+    }
+
+    private func pregnancySupplementAnswer(modelContext: ModelContext) -> String {
+        let profiles = fetch(modelContext, descriptor: FetchDescriptor<PregnancyProfile>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+        guard let profile = profiles.first(where: \.isActive) else {
+            return "I don't have pregnancy information saved yet. Say Open pregnancy to set up your journey."
+        }
+        return PregnancySupplementService().suggestionResponse(for: max(1, min(42, profile.currentWeek)))
+    }
+
+    private func pregnancyNutritionAnswer(modelContext: ModelContext, query: String) -> String {
+        let profiles = fetch(modelContext, descriptor: FetchDescriptor<PregnancyProfile>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))
+        guard let profile = profiles.first(where: \.isActive) else {
+            return "I don't have pregnancy information saved yet. Say Open pregnancy to set up your journey."
+        }
+        return PregnancyNutritionGuide().getSuggestion(for: max(1, min(42, profile.currentWeek)), query: query)
     }
 
     private func healthSummaryAnswer(modelContext: ModelContext) -> String {

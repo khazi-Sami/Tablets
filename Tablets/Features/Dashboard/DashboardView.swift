@@ -326,9 +326,16 @@ struct DashboardView: View {
         guard !isSavingMedicineLog, let next = dataProvider?.nextPendingMedicine else { return }
         isSavingMedicineLog = true
         carePlanErrorText = nil
-        modelContext.insert(MedicineLog(medicine: next.medicine, scheduledTime: next.scheduledAt, takenTime: .now, status: .taken))
+        guard let medicine = fetchMedicine(id: next.medicineID) else {
+            carePlanErrorText = "Could not find that medicine. Please refresh and try again."
+            isSavingMedicineLog = false
+            Task { await viewModel.refresh() }
+            return
+        }
+        modelContext.insert(MedicineLog(medicine: medicine, scheduledTime: next.scheduledAt, takenTime: .now, status: .taken))
         do {
             try modelContext.save()
+            MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(for: medicine, scheduledAt: next.scheduledAt)
             NotificationCenter.default.post(name: .healthDataDidUpdate, object: nil)
             Task { await viewModel.refresh() }
         } catch {
@@ -336,6 +343,19 @@ struct DashboardView: View {
             print("[DashboardView] Could not save taken medicine log: \(error)")
         }
         isSavingMedicineLog = false
+    }
+
+    private func fetchMedicine(id: UUID) -> Medicine? {
+        var descriptor = FetchDescriptor<Medicine>(
+            predicate: #Predicate<Medicine> { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        do {
+            return try modelContext.fetch(descriptor).first
+        } catch {
+            print("[DashboardView] Could not fetch medicine for dashboard action: \(error)")
+            return nil
+        }
     }
 }
 
@@ -395,7 +415,7 @@ private struct SecondaryMetricPill: View {
 }
 
 private struct LowStockWarningCard: View {
-    let medicines: [Medicine]
+    let medicines: [DashboardMedicineSummary]
     let openMedicines: () -> Void
 
     var body: some View {

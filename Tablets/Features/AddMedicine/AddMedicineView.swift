@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 import UIKit
+import WidgetKit
 
 struct AddMedicineView: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +9,7 @@ struct AddMedicineView: View {
     @StateObject private var viewModel = AddMedicineViewModel()
     @FocusState private var focusedField: Field?
     @State private var showAdvancedOptions = false
+    @State private var selectedDrugReference: DrugReferenceEntry?
 
     private let typeColumns = [
         GridItem(.flexible(), spacing: Spacing.small),
@@ -35,9 +37,11 @@ struct AddMedicineView: View {
                         }
                         .padding(Spacing.medium)
                     }
+                    .scrollDismissesKeyboard(.interactively)
 
                     saveBar
                 }
+                .dismissKeyboardOnTap()
                 .overlay {
                     if viewModel.didSave {
                         SuccessOverlay()
@@ -92,13 +96,18 @@ struct AddMedicineView: View {
     private var inputSection: some View {
         AddMedicineSection(title: "Medicine details") {
             VStack(spacing: Spacing.small) {
-                ThemedTextField(
+                DrugAutocompleteField(
                     title: "Medicine name",
                     placeholder: "Example: Vitamin D",
                     text: $viewModel.name,
-                    systemImage: "pills.fill"
-                )
-                .focused($focusedField, equals: .name)
+                    selectedEntry: $selectedDrugReference
+                ) { suggestion in
+                    if viewModel.dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let dosageForm = suggestion.dosageForms.first {
+                        viewModel.dosage = dosageForm.capitalized
+                    }
+                    focusedField = .dosage
+                }
 
                 ThemedTextField(
                     title: "Dosage",
@@ -309,6 +318,7 @@ struct AddMedicineView: View {
                         let engine = AdaptiveReminderEngine(modelContext: modelContext)
                         let scheduler = AdaptiveReminderScheduler(engine: engine, modelContext: modelContext)
                         _ = await scheduler.applyAdaptiveShifts()
+                        WidgetCenter.shared.reloadAllTimelines()
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
                             dismiss()
@@ -320,8 +330,8 @@ struct AddMedicineView: View {
             .opacity(viewModel.canSave ? 1 : 0.56)
         }
         .padding(Spacing.medium)
-        .background(
-            LinearGradient(
+            .background(
+                LinearGradient(
                 colors: [
                     AppColor.warmWhite.opacity(0.08),
                     AppColor.warmWhite.opacity(0.92)

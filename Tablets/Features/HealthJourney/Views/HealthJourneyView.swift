@@ -169,7 +169,7 @@ struct HealthJourneyView: View {
         if streaks.medicine >= 1 { return "You completed medicine care moments today" }
         if streaks.bloodPressure >= 3 { return "Your BP tracking improved this week" }
         if streaks.best >= 7 { return "You maintained a 7-day health streak" }
-        return "You are building healthy habits"
+        return "You are building steady care habits"
     }
 
     private func achievementLevel(for streak: Int) -> String {

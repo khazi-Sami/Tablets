@@ -148,6 +148,7 @@ final class MedicineTodayWidgetViewModel {
 
         do {
             try modelContext.save()
+            MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(for: medicine, scheduledAt: dose.scheduledTime)
             NotificationCenter.default.post(name: .healthDataDidUpdate, object: nil)
             await refresh(modelContext: modelContext)
         } catch {
@@ -292,8 +293,7 @@ final class MedicineTodayWidgetViewModel {
 
     private func bestMatchingLog(for medicine: Medicine, scheduledTime: Date, logs: [MedicineLog]) -> MedicineLog? {
         let matches = logs.filter { log in
-            guard log.medicine?.id == medicine.id else { return false }
-            return calendar.isDate(log.scheduledTime, equalTo: scheduledTime, toGranularity: .minute)
+            calendar.isDate(log.scheduledTime, equalTo: scheduledTime, toGranularity: .minute)
         }
 
         if let taken = matches.first(where: { $0.status == .taken }) { return taken }
@@ -327,13 +327,11 @@ final class MedicineTodayWidgetViewModel {
             let dayTaken = dayDoses.filter { key in
                 dayLogs.contains { log in
                     log.status == .taken &&
-                    log.medicine?.id == key.medicineId &&
                     calendar.isDate(log.scheduledTime, equalTo: key.scheduledTime, toGranularity: .minute)
                 }
             }.count
             let dayMissed = dayDoses.filter { key in
                 let matched = dayLogs.first { log in
-                    log.medicine?.id == key.medicineId &&
                     calendar.isDate(log.scheduledTime, equalTo: key.scheduledTime, toGranularity: .minute)
                 }
                 if matched?.status == .skipped || matched?.status == .missed { return true }

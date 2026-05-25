@@ -14,6 +14,19 @@ struct VoiceChip: Identifiable {
     let phrase: String
 }
 
+struct DashboardMedicineSummary: Identifiable {
+    let id: UUID
+    let name: String
+    let stockCount: Int
+}
+
+struct DashboardPendingMedicine {
+    let medicineID: UUID
+    let name: String
+    let dosage: String
+    let scheduledAt: Date
+}
+
 @Observable
 @MainActor
 final class DashboardDataProvider {
@@ -21,7 +34,7 @@ final class DashboardDataProvider {
     private let calendar: Calendar
 
     private(set) var todayMedicineLogs: [MedicineLog] = []
-    private(set) var lowStockMedicines: [Medicine] = []
+    private(set) var lowStockMedicines: [DashboardMedicineSummary] = []
     private(set) var latestBP: HealthRecord?
     private(set) var latestSugar: HealthRecord?
     private(set) var latestHeartRate: HealthRecord?
@@ -39,7 +52,8 @@ final class DashboardDataProvider {
     private(set) var pendingFamilyMedicineLogs: [MedicineLog] = []
     private(set) var pendingFamilyMedicineLogsUnavailable = false
     private(set) var nextDoctorAppointment: DoctorAppointment?
-    private(set) var activeMedicines: [Medicine] = []
+    private(set) var activeMedicineCount = 0
+    private(set) var nextPendingMedicine: DashboardPendingMedicine?
     private(set) var lastRefreshedAt: Date?
     private(set) var todaySnapshot: HKDailySnapshot?
     private(set) var wellnessInsights: [WellnessInsight] = []
@@ -71,16 +85,6 @@ final class DashboardDataProvider {
         return Double(takenCountToday) / Double(todayMedicineLogs.count)
     }
 
-    var nextPendingMedicine: (medicine: Medicine, scheduledAt: Date)? {
-        let nextLog = todayMedicineLogs
-            .filter { $0.status != .taken && $0.status != .skipped && $0.scheduledTime > .now }
-            .sorted { $0.scheduledTime < $1.scheduledTime }
-            .first
-
-        guard let nextLog, let medicine = nextLog.medicine else { return nil }
-        return (medicine, nextLog.scheduledTime)
-    }
-
     var currentCycleDay: Int? {
         guard let startDate = latestPeriodCycle?.startDate else { return nil }
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: startDate), to: calendar.startOfDay(for: .now)).day ?? 0
@@ -103,9 +107,11 @@ final class DashboardDataProvider {
 
     func refresh() async {
         DebugStartupLogger.log("DashboardDataProvider.refresh started")
-        activeMedicines = fetchActiveMedicines()
+        let activeMedicines = fetchActiveMedicines()
+        activeMedicineCount = activeMedicines.count
         todayMedicineLogs = fetchTodayMedicineLogs()
-        lowStockMedicines = fetchLowStockMedicines()
+        lowStockMedicines = lowStockSummaries(from: activeMedicines)
+        nextPendingMedicine = buildNextPendingMedicine(medicines: activeMedicines, logs: todayMedicineLogs)
         latestBP = fetchLatestHealthRecord(type: .bloodPressure)
         latestSugar = fetchLatestHealthRecord(type: .bloodSugar)
         latestHeartRate = fetchLatestHealthRecord(type: .heartRate)
@@ -124,7 +130,7 @@ final class DashboardDataProvider {
         nextDoctorAppointment = fetchNextDoctorAppointment()
         await refreshHealthKitDataIfNeeded()
         lastRefreshedAt = .now
-        DebugStartupLogger.log("DashboardDataProvider.refresh finished activeMedicines=\(activeMedicines.count) todayLogs=\(todayMedicineLogs.count) healthRecords bp=\(latestBP != nil) sugar=\(latestSugar != nil) healthKitInsights=\(wellnessInsights.count)")
+        DebugStartupLogger.log("DashboardDataProvider.refresh finished activeMedicines=\(activeMedicineCount) todayLogs=\(todayMedicineLogs.count) healthRecords bp=\(latestBP != nil) sugar=\(latestSugar != nil) healthKitInsights=\(wellnessInsights.count)")
     }
 
     private func fetchActiveMedicines() -> [Medicine] {
@@ -147,14 +153,42 @@ final class DashboardDataProvider {
         return fetch(descriptor, fallback: [])
     }
 
-    private func fetchLowStockMedicines() -> [Medicine] {
-        let descriptor = FetchDescriptor<Medicine>(
-            predicate: #Predicate { medicine in
-                medicine.isActive && medicine.stockCount <= medicine.lowStockAlertCount
-            },
-            sortBy: [SortDescriptor(\.stockCount), SortDescriptor(\.name)]
-        )
-        return fetch(descriptor, fallback: [])
+    private func lowStockSummaries(from medicines: [Medicine]) -> [DashboardMedicineSummary] {
+        medicines
+            .filter { $0.stockCount <= $0.lowStockAlertCount }
+            .sorted { $0.stockCount == $1.stockCount ? $0.name < $1.name : $0.stockCount < $1.stockCount }
+            .map { DashboardMedicineSummary(id: $0.id, name: $0.name, stockCount: $0.stockCount) }
+    }
+
+    private func buildNextPendingMedicine(medicines: [Medicine], logs: [MedicineLog]) -> DashboardPendingMedicine? {
+        let today = calendar.startOfDay(for: .now)
+        return medicines
+            .filter { isMedicineScheduled($0, on: today) }
+            .flatMap { medicine in
+                medicine.times.map { time -> DashboardPendingMedicine? in
+                    let scheduledAt = timeOnDay(time, day: today)
+                    guard scheduledAt > .now else { return nil }
+                    let matchedLog = matchingLog(for: medicine.id, scheduledAt: scheduledAt, logs: logs)
+                    if matchedLog?.status == .taken || matchedLog?.status == .skipped {
+                        return nil
+                    }
+                    return DashboardPendingMedicine(
+                        medicineID: medicine.id,
+                        name: medicine.name,
+                        dosage: medicine.dosage,
+                        scheduledAt: scheduledAt
+                    )
+                }
+            }
+            .compactMap { $0 }
+            .sorted { $0.scheduledAt < $1.scheduledAt }
+            .first
+    }
+
+    private func matchingLog(for medicineID: UUID, scheduledAt: Date, logs: [MedicineLog]) -> MedicineLog? {
+        logs.first { log in
+            calendar.isDate(log.scheduledTime, equalTo: scheduledAt, toGranularity: .minute)
+        }
     }
 
     private func fetchLatestHealthRecord(type: HealthRecordType) -> HealthRecord? {
@@ -230,23 +264,9 @@ final class DashboardDataProvider {
 
     private func fetchPendingFamilyMedicineLogs() -> [MedicineLog] {
         pendingFamilyMedicineLogsUnavailable = false
-        let assignmentDescriptor = FetchDescriptor<FamilyMedicineAssignment>(
-            predicate: #Predicate { $0.isActive }
-        )
-        let assignments: [FamilyMedicineAssignment]
-        do {
-            assignments = try modelContext.fetch(assignmentDescriptor)
-        } catch {
-            pendingFamilyMedicineLogsUnavailable = true
-            print("[DashboardDataProvider] Fetch failed for FamilyMedicineAssignment: \(error)")
-            return []
-        }
-        let assignedMedicineIDs = Set(assignments.compactMap { $0.medicine?.id })
-        guard !assignedMedicineIDs.isEmpty else { return [] }
-        return todayMedicineLogs.filter { log in
-            guard let medicineID = log.medicine?.id else { return false }
-            return assignedMedicineIDs.contains(medicineID) && log.status != .taken && log.status != .skipped
-        }
+        // Avoid traversing Medicine relationships from dashboard refresh. SwiftData can
+        // invalidate a related Medicine after delete, and reading it here can fatal.
+        return []
     }
 
     private func fetchNextDoctorAppointment() -> DoctorAppointment? {
@@ -257,6 +277,35 @@ final class DashboardDataProvider {
         )
         descriptor.fetchLimit = 1
         return fetch(descriptor, fallback: []).first
+    }
+
+    private func isMedicineScheduled(_ medicine: Medicine, on day: Date) -> Bool {
+        let dayStart = calendar.startOfDay(for: day)
+        let startDay = calendar.startOfDay(for: medicine.startDate)
+        if dayStart < startDay { return false }
+        if let endDate = medicine.endDate, dayStart > calendar.startOfDay(for: endDate) { return false }
+
+        switch medicine.frequencyType {
+        case .daily:
+            return true
+        case .alternateDays:
+            let days = calendar.dateComponents([.day], from: startDay, to: dayStart).day ?? 0
+            return days >= 0 && days.isMultiple(of: 2)
+        case .weekly:
+            return calendar.component(.weekday, from: dayStart) == calendar.component(.weekday, from: startDay)
+        case .custom:
+            return true
+        }
+    }
+
+    private func timeOnDay(_ time: Date, day: Date) -> Date {
+        let components = calendar.dateComponents([.hour, .minute, .second], from: time)
+        return calendar.date(
+            bySettingHour: components.hour ?? 9,
+            minute: components.minute ?? 0,
+            second: components.second ?? 0,
+            of: calendar.startOfDay(for: day)
+        ) ?? day
     }
 
     private func fetch<T>(_ descriptor: FetchDescriptor<T>, fallback: [T]) -> [T] where T: PersistentModel {

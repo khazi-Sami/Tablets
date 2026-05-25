@@ -200,6 +200,8 @@ struct ProfileView: View {
                     }
                     .padding(Spacing.medium)
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle("Profile")
             .sheet(isPresented: $isShowingAssistant) {

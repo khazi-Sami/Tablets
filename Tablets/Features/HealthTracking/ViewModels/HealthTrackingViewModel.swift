@@ -10,6 +10,7 @@ final class HealthTrackingViewModel: ObservableObject {
     @Published var isShowingDiabetes = false
     @Published var isShowingInsights = false
     @Published var isShowingCharts = false
+    @Published var isShowingAlertHistory = false
 
     func addQuickHeartRate(modelContext: ModelContext) {
         do {
@@ -31,5 +32,9 @@ final class HealthTrackingViewModel: ObservableObject {
         let values = records.filter { $0.type == type && $0.measuredAt >= start }.map(\.value1)
         guard !values.isEmpty else { return nil }
         return values.reduce(0, +) / Double(values.count)
+    }
+
+    func activeSafetyAlerts(from records: [HealthRecord]) -> [HealthSafetyAlert] {
+        HealthSafetyAlerter.activeAlerts(from: records)
     }
 }

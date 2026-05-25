@@ -30,6 +30,31 @@ struct ResponseVariationPool {
         ]), values: ["symptoms": symptoms])
     }
 
+    func pregnancyWeightSaved(week: Int) -> String {
+        fill(random([
+            "I've saved your pregnancy weight for week {week}. Please follow your doctor's guidance.",
+            "Weight logged for week {week} of your pregnancy. Informational only — please consult your doctor or midwife.",
+            "Saved. Your week {week} weight has been recorded. Your doctor can guide what is right for your pregnancy."
+        ]), values: ["week": "\(week)"])
+    }
+
+    func babyKickSaved(count: Int, duration: Int?) -> String {
+        let durationText = duration.map { " in \($0) minutes" } ?? ""
+        return fill(random([
+            "Logged {count} kicks{duration}. If you notice reduced movement, please contact your doctor or midwife promptly.",
+            "Saved your kick counting session — {count} movements recorded{duration}. Please consult your doctor or midwife if movement patterns change.",
+            "Kick session saved. {count} movements noted{duration}. Informational only — discuss kick patterns with your doctor."
+        ]), values: ["count": "\(count)", "duration": durationText])
+    }
+
+    func pregnancySymptomSaved() -> String {
+        random([
+            "I've saved your pregnancy symptoms for today. If anything feels severe or unusual, please contact your doctor or midwife.",
+            "Symptoms logged. Please reach out to your midwife or doctor if any symptoms worsen.",
+            "Saved how you're feeling today. Please seek medical advice promptly if symptoms are severe."
+        ])
+    }
+
     func medicineTaken(medicine: String) -> String {
         fill(random([
             "Got it. I've marked your {medicine} as taken.",

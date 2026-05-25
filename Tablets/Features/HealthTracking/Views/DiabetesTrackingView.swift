@@ -37,6 +37,8 @@ struct DiabetesTrackingView: View {
                     }
                     .padding(Spacing.medium)
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle("Diabetes")
         }

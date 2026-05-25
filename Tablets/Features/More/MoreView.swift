@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MoreView: View {
     @State private var voiceDestination: MoreVoiceDestination?
+    @State private var showPregnancyPlanning = false
 
     var body: some View {
         NavigationStack {
@@ -26,6 +27,13 @@ struct MoreView: View {
                             } label: {
                                 MoreDestinationRow(title: "Women’s Health", subtitle: "Cycle, symptoms, and daily logs", systemImage: "heart.circle.fill", color: AppColor.lavenderDeep)
                             }
+
+                            Button {
+                                showPregnancyPlanning = true
+                            } label: {
+                                MoreDestinationRow(title: "Pregnancy & Planning", subtitle: "Track your journey week by week", systemImage: PregnancyTheme.iconPregnant, color: PregnancyTheme.deepRose)
+                            }
+                            .buttonStyle(.plain)
 
                             NavigationLink {
                                 FamilyCareView()
@@ -77,6 +85,12 @@ struct MoreView: View {
 
                             #if DEBUG
                             NavigationLink {
+                                InternalTestChecklistView()
+                            } label: {
+                                MoreDestinationRow(title: "Internal Test Checklist", subtitle: "Run real-device TestFlight smoke checks", systemImage: "checklist.checked", color: AppColor.mintGreenDeep)
+                            }
+
+                            NavigationLink {
                                 AdaptiveReminderDebugView()
                             } label: {
                                 MoreDestinationRow(title: "Adaptive Reminder Debug", subtitle: "Inspect local take patterns and follow-ups", systemImage: "bell.badge.waveform.fill", color: AppColor.medicalBlue)
@@ -91,6 +105,12 @@ struct MoreView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $voiceDestination) { destination in
                 destination.view
+            }
+            .sheet(isPresented: $showPregnancyPlanning) {
+                PregnancyPlanningView()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .voiceOpenPregnancyPlanning)) { _ in
+                showPregnancyPlanning = true
             }
             .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openWomensHealth)) { _ in
                 voiceDestination = .womensHealth
@@ -181,12 +201,7 @@ private struct MoreDestinationRow: View {
     var body: some View {
         PillCardContainer(padding: Spacing.medium) {
             HStack(spacing: Spacing.medium) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(color)
-                    .frame(width: 56, height: 56)
-                    .background(color.opacity(0.13))
-                    .clipShape(Circle())
+                iconView
 
                 VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                     Text(title)
@@ -204,6 +219,74 @@ private struct MoreDestinationRow: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(AppColor.tertiaryInk)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        if title == "Pregnancy & Planning" {
+            ZStack {
+                // Outer circle background
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.85, blue: 0.88),
+                                Color(red: 0.95, green: 0.78, blue: 0.92)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+
+                // Womb / belly icon with baby inside
+                ZStack {
+                    Circle()
+                        .fill(
+                            Color.white.opacity(0.48)
+                        )
+                        .frame(width: 34, height: 34)
+
+                    Ellipse()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.92, green: 0.42, blue: 0.62),
+                                    Color(red: 0.76, green: 0.46, blue: 0.86)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 25, height: 31)
+                        .rotationEffect(.degrees(-10))
+
+                    Circle()
+                        .fill(Color.white.opacity(0.92))
+                        .frame(width: 8, height: 8)
+                        .offset(x: -3, y: -5)
+
+                    Capsule()
+                        .fill(Color.white.opacity(0.9))
+                        .frame(width: 12, height: 7)
+                        .rotationEffect(.degrees(-24))
+                        .offset(x: 3, y: 4)
+
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 6, weight: .bold))
+                        .foregroundColor(Color(red: 1.0, green: 0.45, blue: 0.55))
+                        .offset(x: 9, y: -9)
+                }
+            }
+            .frame(width: 56, height: 56)
+        } else {
+            Image(systemName: systemImage)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(color)
+                .frame(width: 56, height: 56)
+                .background(color.opacity(0.13))
+                .clipShape(Circle())
         }
     }
 }

@@ -35,6 +35,8 @@ struct CustomShortcutsView: View {
                     .padding(Spacing.medium)
                     .padding(.bottom, 80)
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle("My Voice Shortcuts")
             .navigationBarTitleDisplayMode(.inline)
@@ -279,7 +281,7 @@ struct CustomShortcutsView: View {
 
     private var starterTemplates: [(trigger: String, response: String)] {
         [
-            ("Good morning", "Good morning! Your first tablet of the day is due. Have a healthy day."),
+            ("Good morning", "Good morning! Your first tablet of the day is due. Wishing you a steady day."),
             ("How am I today", "Based on your recent logs, you have been logging regularly. Keep it up."),
             ("Reminder check", "Checking your pending medicines now."),
             ("My name is", "Hello! I remember you. How can I help with your health today?"),

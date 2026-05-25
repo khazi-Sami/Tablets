@@ -11,6 +11,49 @@ struct HealthIntentParser {
         let intent: HealthVoiceIntent
         let confidence: Double
 
+        if (normalized.contains("pregnancy weight") ||
+            normalized.contains("pregnant weight") ||
+            (normalized.contains("weight") &&
+             normalized.contains("week") &&
+             normalized.contains("pregnant"))) && !numbers.isEmpty {
+            return ParsedHealthCommand(intent: .logPregnancyWeight, originalText: text, numbers: numbers, symptoms: [], entities: entities, confidence: 0.88)
+        }
+
+        if normalized.contains("baby kick") ||
+            normalized.contains("kick count") ||
+            normalized.contains("baby moved") ||
+            normalized.contains("baby kicked") ||
+            normalized.contains("felt kick") ||
+            normalized.contains("baby is moving") {
+            return ParsedHealthCommand(intent: .logBabyKick, originalText: text, numbers: numbers, symptoms: [], entities: entities, confidence: 0.87)
+        }
+
+        if normalized.contains("start contraction") || normalized.contains("contraction started") {
+            return ParsedHealthCommand(intent: .startContraction, originalText: text, numbers: [], symptoms: [], entities: entities, confidence: 0.88)
+        }
+
+        if normalized.contains("stop contraction") || normalized.contains("contraction ended") {
+            return ParsedHealthCommand(intent: .stopContraction, originalText: text, numbers: [], symptoms: [], entities: entities, confidence: 0.88)
+        }
+
+        if let note = pregnancyNoteText(from: normalized) {
+            var noteEntities = entities
+            noteEntities["pregnancyNote"] = note.text
+            noteEntities["pregnancyNoteCategory"] = note.category.rawValue
+            return ParsedHealthCommand(intent: .logPregnancyNote, originalText: text, numbers: [], symptoms: [], entities: noteEntities, confidence: 0.88)
+        }
+
+        if let mood = pregnancyMood(in: normalized), normalized.contains("pregnancy") || normalized.contains("feeling") || normalized.contains("feel ") || normalized.contains("mood") {
+            var moodEntities = entities
+            moodEntities["pregnancyMood"] = mood.rawValue
+            return ParsedHealthCommand(intent: .logPregnancyMood, originalText: text, numbers: [], symptoms: [], entities: moodEntities, confidence: 0.86)
+        }
+
+        if (normalized.contains("pregnancy") ||
+            normalized.contains("pregnant")) && !symptoms.isEmpty {
+            return ParsedHealthCommand(intent: .logPregnancySymptom, originalText: text, numbers: [], symptoms: symptoms, entities: entities, confidence: 0.86)
+        }
+
         if normalized.contains("tension") && (
             normalized.contains("record") || normalized.contains("log") ||
             normalized.contains("add") || normalized.contains("enter") ||
@@ -137,6 +180,7 @@ struct HealthIntentParser {
 
             // Stomach
             "nausea", "nauseous", "vomiting", "vomit", "throwing up",
+            "morning sickness", "food aversion", "heartburn", "cravings",
             "stomach pain", "stomach ache", "stomach is paining",
             "tummy pain", "acidity", "gas", "bloating", "indigestion",
             "stomach upset", "upset stomach", "loose motion",
@@ -145,6 +189,7 @@ struct HealthIntentParser {
             // Body pain
             "body pain", "body ache", "back pain", "back ache",
             "back is paining", "leg pain", "leg cramp", "cramps",
+            "round ligament pain", "pelvic pressure", "braxton hicks",
             "joint pain", "knee pain", "knee hurts", "shoulder pain",
             "neck pain", "wrist pain", "hip pain", "muscle pain",
             "muscle ache", "body is paining",
@@ -213,6 +258,33 @@ struct HealthIntentParser {
             entities["time"] = time
         }
         return entities
+    }
+
+    private func pregnancyMood(in text: String) -> PregnancyMood? {
+        let moods: [(String, PregnancyMood)] = [
+            ("happy", .happy), ("sad", .emotional), ("anxious", .anxious), ("worried", .worried),
+            ("tired", .tired), ("excited", .excited), ("emotional", .emotional), ("calm", .calm),
+            ("uncomfortable", .uncomfortable), ("overwhelmed", .anxious), ("nervous", .anxious),
+            ("joyful", .happy), ("exhausted", .tired), ("fearful", .worried), ("hopeful", .excited)
+        ]
+        return moods.first { text.contains($0.0) }?.1
+    }
+
+    private func pregnancyNoteText(from text: String) -> (text: String, category: NoteCategory)? {
+        let triggers: [(String, NoteCategory)] = [
+            ("quick note", .general),
+            ("note for doctor", .forDoctor),
+            ("pregnancy note", .general),
+            ("save note", .general),
+            ("remember this", .reminder),
+            ("remember", .reminder),
+            ("add note", .general),
+            ("add to pregnancy notes", .general)
+        ]
+        guard let trigger = triggers.first(where: { text.contains($0.0) }) else { return nil }
+        let note = text.components(separatedBy: trigger.0).dropFirst().joined(separator: trigger.0).trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        guard !note.isEmpty else { return nil }
+        return (note, trigger.1)
     }
 
     private func normalizeNumberWords(in text: String) -> String {

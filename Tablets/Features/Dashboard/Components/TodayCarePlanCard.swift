@@ -23,14 +23,14 @@ struct TodayCarePlanCard: View {
                         .foregroundStyle(AppColor.ink)
 
                     if let next = dataProvider.nextPendingMedicine {
-                        Text(next.medicine.name)
+                        Text(next.name)
                             .font((isElderlyMode ? Font.title2 : Font.title3).weight(.bold))
                             .foregroundStyle(AppColor.ink)
                             .elderlyScaled(isElderlyMode)
-                        Text("\(next.medicine.dosage) · \(next.scheduledAt.formatted(date: .omitted, time: .shortened))")
+                        Text("\(next.dosage) · \(next.scheduledAt.formatted(date: .omitted, time: .shortened))")
                             .font(.caption)
                             .foregroundStyle(AppColor.secondaryInk)
-                    } else if dataProvider.activeMedicines.isEmpty {
+                    } else if dataProvider.activeMedicineCount == 0 {
                         Text("No medicines added yet")
                             .font((isElderlyMode ? Font.title2 : Font.title3).weight(.bold))
                             .foregroundStyle(AppColor.ink)
@@ -65,7 +65,7 @@ struct TodayCarePlanCard: View {
                 CapsuleButton(isSaving ? "Saving..." : "Mark Taken", systemImage: "checkmark.circle.fill", action: markTaken)
                     .frame(minHeight: isElderlyMode ? 56 : 52)
                     .disabled(isSaving)
-            } else if dataProvider.activeMedicines.isEmpty {
+            } else if dataProvider.activeMedicineCount == 0 {
                 CapsuleButton("Add your first medicine →", systemImage: "plus.circle.fill", action: addMedicine)
                     .frame(minHeight: isElderlyMode ? 56 : 52)
             }
@@ -115,11 +115,11 @@ struct TodayCarePlanCard: View {
     }
 
     private var shouldShowProgress: Bool {
-        !dataProvider.activeMedicines.isEmpty
+        dataProvider.activeMedicineCount > 0
     }
 
     private var progressValue: Double {
-        if dataProvider.activeMedicines.isEmpty { return 0 }
+        if dataProvider.activeMedicineCount == 0 { return 0 }
         if dataProvider.todayMedicineLogs.isEmpty { return 1 }
         return dataProvider.medicineProgressToday
     }

@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 struct MedicinesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -79,8 +80,10 @@ struct MedicinesView: View {
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
                         .contentMargins(.vertical, Spacing.small, for: .scrollContent)
+                        .scrollDismissesKeyboard(.interactively)
                     }
                 }
+                .dismissKeyboardOnTap()
             }
             .navigationTitle("Medicines")
             .toolbar {
@@ -121,8 +124,14 @@ struct MedicinesView: View {
             .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openAddMedicine)) { _ in
                 viewModel.isPresentingAddMedicine = true
             }
-            .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openMedicineReminder)) { _ in
-                reminderMedicine = medicines.first(where: \.isActive) ?? medicines.first
+            .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openMedicineReminder)) { notification in
+                if let idString = notification.userInfo?["medicineID"] as? String,
+                   let id = UUID(uuidString: idString),
+                   let medicine = medicines.first(where: { $0.id == id }) {
+                    reminderMedicine = medicine
+                } else {
+                    reminderMedicine = medicines.first(where: \.isActive) ?? medicines.first
+                }
             }
             .alert("Something went wrong", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
@@ -229,6 +238,7 @@ struct MedicinesView: View {
         do {
             try modelContext.save()
             MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(for: medicine, scheduledAt: scheduledTime)
+            WidgetCenter.shared.reloadAllTimelines()
             HapticsManager.notification(.success)
         } catch {
             viewModel.errorMessage = error.localizedDescription

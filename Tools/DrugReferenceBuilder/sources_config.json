@@ -1,0 +1,23 @@
+{
+  "openFDA_NDC": {
+    "name": "openFDA NDC",
+    "url": "https://api.fda.gov/drug/ndc.json?limit=1000",
+    "enabled": true
+  },
+  "rxnorm": {
+    "name": "RxNorm release files",
+    "enabled": true,
+    "requiredFiles": ["RXNCONSO.RRF"]
+  },
+  "dailyMed": {
+    "name": "DailyMed",
+    "enabled": false,
+    "note": "Future label extraction only. Do not bundle raw labels in the app."
+  },
+  "cdscoIndia": {
+    "name": "CDSCO India",
+    "enabled": false,
+    "note": "Future importer only if parsing is safe and source data is suitable."
+  }
+}
+

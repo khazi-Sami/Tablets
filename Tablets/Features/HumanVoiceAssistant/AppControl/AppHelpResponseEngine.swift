@@ -28,6 +28,32 @@ final class AppHelpResponseEngine {
         case .openHealthJourney: return variations.navigation(["Here is your health journey.", "Opening your wellness timeline.", "Taking you to your progress."])
         case .openMore: return variations.navigation(["Opening more options.", "Here are more tools.", "Taking you to more."])
         case .openSettings: return variations.navigation(["Opening settings.", "Taking you to settings.", "Here are your app preferences."])
+        case .openPregnancyPlanning, .openPregnancySetup, .openPregnancyDashboard:
+            return variations.navigation(["Opening your pregnancy journey.", "Taking you to Pregnancy & Planning.", "Opening your pregnancy tracker."])
+        case .openPregnancySymptomLog:
+            return variations.navigation(["Let's log how you're feeling today.", "Opening pregnancy symptom log.", "Ready to save your pregnancy symptoms."])
+        case .openPregnancyWeightLog:
+            return variations.navigation(["Opening pregnancy weight log.", "Ready to save pregnancy weight.", "Taking you to pregnancy weight tracking."])
+        case .openBabyKickCounter:
+            return variations.navigation(["Opening the kick counter. Tap each time you feel baby move.", "Taking you to baby kick counter.", "Opening baby movement tracking."])
+        case .openPregnancyAppointments:
+            return variations.navigation(["Opening your pregnancy appointments.", "Taking you to appointment planning.", "Here are pregnancy appointments."])
+        case .openPregnancyWeekGuide:
+            return variations.navigation(["Opening your week-by-week pregnancy guide.", "Taking you to the pregnancy week guide.", "Here is your baby's week guide."])
+        case .openPregnancyMilestones:
+            return variations.navigation(["Opening pregnancy milestones.", "Taking you to beautiful moments.", "Here are your pregnancy milestones."])
+        case .openContractionTimer:
+            return "Opening contraction timer."
+        case .openPregnancyMoodLog:
+            return "Let's log how you're feeling."
+        case .openPregnancyTimeline:
+            return "Opening your pregnancy journey timeline."
+        case .openPregnancyWeightChart:
+            return "Opening pregnancy weight chart."
+        case .openBirthPlan:
+            return "Opening your birth plan."
+        case .openPregnancyNotes:
+            return "Opening your pregnancy notes."
         case .goBack: return "Okay, closing this."
         case .helpGeneral: return generalHelpResponse()
         case .helpWithFeature(let feature): return "I can help with \(feature). You can ask me to open it or explain it."
@@ -65,6 +91,21 @@ final class AppHelpResponseEngine {
         case .openMedicineReminder: return "Medicine Reminder"
         case .openDailyCheckIn: return "Daily Check-In"
         case .openSettings: return "Settings"
+        case .openPregnancyPlanning: return "Pregnancy & Planning"
+        case .openPregnancySetup: return "Pregnancy Setup"
+        case .openPregnancyDashboard: return "Pregnancy Dashboard"
+        case .openPregnancySymptomLog: return "Pregnancy Symptom Log"
+        case .openPregnancyWeightLog: return "Pregnancy Weight Log"
+        case .openBabyKickCounter: return "Baby Kick Counter"
+        case .openPregnancyAppointments: return "Pregnancy Appointments"
+        case .openPregnancyWeekGuide: return "Pregnancy Week Guide"
+        case .openPregnancyMilestones: return "Pregnancy Milestones"
+        case .openContractionTimer: return "Contraction Timer"
+        case .openPregnancyMoodLog: return "Pregnancy Mood Log"
+        case .openPregnancyTimeline: return "Pregnancy Timeline"
+        case .openPregnancyWeightChart: return "Pregnancy Weight Chart"
+        case .openBirthPlan: return "Birth Plan"
+        case .openPregnancyNotes: return "Pregnancy Notes"
         case .goBack: return "Back"
         case .helpGeneral: return "Help"
         case .helpWithFeature(let feature): return feature
