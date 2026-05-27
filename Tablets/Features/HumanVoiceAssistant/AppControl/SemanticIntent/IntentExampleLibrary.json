@@ -1003,6 +1003,22 @@
     ]
   },
   {
+    "intentId": "openHealthReport",
+    "displayName": "Health Report",
+    "category": "navigation",
+    "responseTemplate": "Opening your health report.",
+    "examples": [
+      "Generate health report",
+      "Create health report",
+      "Export my health data",
+      "Make my report",
+      "Make health report",
+      "Open health report",
+      "Personal health report",
+      "Full health report"
+    ]
+  },
+  {
     "intentId": "openDoctorVisit",
     "displayName": "Doctor Visit",
     "category": "navigation",
@@ -1624,6 +1640,9 @@
     "examples": [
       "help",
       "what can you do",
+      "what can I do",
+      "how do I use this app",
+      "where do I start",
       "I am confused",
       "guide me",
       "I don't know what to do",

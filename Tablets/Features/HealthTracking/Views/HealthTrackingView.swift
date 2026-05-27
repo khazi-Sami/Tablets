@@ -29,9 +29,16 @@ struct HealthTrackingView: View {
                         )
                         .healthEntrance(didAppear: didAppear, delay: 0.02)
 
+                        InlineFeatureHint(
+                            id: "health_tracking_beginner",
+                            message: "Log BP or sugar to see trends and supportive safety alerts.",
+                            systemImage: "heart.text.square.fill"
+                        )
+                        .healthEntrance(didAppear: didAppear, delay: 0.035)
+
                         if !hasBPRecords {
                             VoiceCoachingCard(
-                                message: "No BP readings yet.",
+                                message: "Start logging BP to see health trends.",
                                 command: "My BP is 120 over 80"
                             )
                             .healthEntrance(didAppear: didAppear, delay: 0.05)
@@ -39,7 +46,7 @@ struct HealthTrackingView: View {
 
                         if !hasSugarRecords {
                             VoiceCoachingCard(
-                                message: "No sugar readings yet.",
+                                message: "Start logging sugar to see health trends.",
                                 command: "My sugar is 145 after food"
                             )
                             .healthEntrance(didAppear: didAppear, delay: 0.07)

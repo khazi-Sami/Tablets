@@ -124,7 +124,7 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
                 scheduledTimeKey: payload.scheduledTimeKey,
                 date: scheduledAt
             )
-            WidgetCenter.shared.reloadAllTimelines()
+            WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
         } catch {
             debugLog("Notification action save failed: \(error)")
         }

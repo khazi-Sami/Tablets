@@ -5,9 +5,10 @@ struct PregnancyPlanningView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PregnancyProfile.createdAt, order: .reverse) private var profiles: [PregnancyProfile]
     @State private var destination: PregnancyPlanningDestination?
+    @State private var setupCompletedProfile: PregnancyProfile?
 
     private var activeProfile: PregnancyProfile? {
-        profiles.first(where: \.isActive)
+        setupCompletedProfile ?? profiles.first(where: \.isActive)
     }
 
     var body: some View {
@@ -15,7 +16,9 @@ struct PregnancyPlanningView: View {
             if let activeProfile {
                 PregnancyDashboardView(profile: activeProfile, destination: $destination)
             } else {
-                PregnancySetupView()
+                PregnancySetupView { profile in
+                    setupCompletedProfile = profile
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .voiceOpenPregnancySymptomLog)) { _ in destination = .symptoms }

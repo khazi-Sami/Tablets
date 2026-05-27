@@ -53,6 +53,9 @@ final class VoiceNavigationCoordinator: ObservableObject {
         case .openDoctorReport:
             appRouter.selectedTab = .more
             await postAfterTabChange(VoiceNavigationNotification.openDoctorReport)
+        case .openHealthReport:
+            appRouter.selectedTab = .more
+            await postAfterTabChange(VoiceNavigationNotification.openHealthReport)
         case .openPrescriptionScanner:
             appRouter.selectedTab = .more
             await postAfterTabChange(VoiceNavigationNotification.openPrescriptionScanner)

@@ -30,10 +30,10 @@ struct TabletsApp: App {
     private var rootView: some View {
         switch modelContainerState {
         case .loaded(let container):
-            AppRootView()
+            AuthGateView()
                 .modelContainer(container)
                 .onAppear {
-                    DebugStartupLogger.log("WindowGroup root AppRootView appeared")
+                    DebugStartupLogger.log("WindowGroup root AuthGateView appeared")
                 }
         case .failed(let error):
             AppModelContainerErrorView(

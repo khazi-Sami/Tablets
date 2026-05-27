@@ -18,6 +18,7 @@ final class AppHelpResponseEngine {
         case .openCyclePrediction: return variations.navigation(["Opening cycle prediction.", "Showing your estimated cycle view.", "Taking you to period estimates."])
         case .openDoctorVisit: return variations.navigation(["Opening your doctor visit log.", "Taking you to doctor visits.", "Here are your appointment notes."])
         case .openDoctorReport: return variations.navigation(["Opening your doctor report preview.", "Creating your doctor report screen.", "Taking you to the doctor PDF report."])
+        case .openHealthReport: return "Opening your health report."
         case .openPrescriptionScanner: return variations.navigation(["Opening the prescription scanner.", "Ready to scan your prescription.", "Opening the scanner."])
         case .openFamilyCare: return variations.navigation(["Opening family care.", "Taking you to family care.", "Here are family profiles."])
         case .openProfile: return variations.navigation(["Opening profile.", "Taking you to profile.", "Here are your profile settings."])
@@ -83,6 +84,7 @@ final class AppHelpResponseEngine {
         case .openCyclePrediction: return "Cycle Prediction"
         case .openDoctorVisit: return "Doctor Visit"
         case .openDoctorReport: return "Doctor Report"
+        case .openHealthReport: return "Health Report"
         case .openPrescriptionScanner: return "Prescription Scanner"
         case .openFamilyCare: return "Family Care"
         case .openProfile: return "Profile"
@@ -114,7 +116,7 @@ final class AppHelpResponseEngine {
     }
 
     func generalHelpResponse() -> String {
-        "You can ask me to open any section, record readings, or answer from your saved health logs. For example, say: Record BP, Open periods, or How is my sugar this week."
+        "You can start by adding your medicines, logging BP or sugar, or trying the voice assistant. Good first commands are: Add my first medicine, Log BP, or What medicine is next?"
     }
 
     func unknownResponse() -> String {

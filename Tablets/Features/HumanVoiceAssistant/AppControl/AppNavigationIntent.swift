@@ -16,6 +16,7 @@ enum AppNavigationIntent: Equatable {
     case openCyclePrediction
     case openDoctorVisit
     case openDoctorReport
+    case openHealthReport
     case openPrescriptionScanner
     case openFamilyCare
     case openProfile
@@ -61,6 +62,7 @@ enum AppNavigationIntent: Equatable {
         case .openCyclePrediction: return "openCyclePrediction"
         case .openDoctorVisit: return "openDoctorVisit"
         case .openDoctorReport: return "openDoctorReport"
+        case .openHealthReport: return "openHealthReport"
         case .openPrescriptionScanner: return "openPrescriptionScanner"
         case .openFamilyCare: return "openFamilyCare"
         case .openProfile: return "openProfile"
@@ -108,6 +110,7 @@ enum AppNavigationIntent: Equatable {
         case "openCyclePrediction": self = .openCyclePrediction
         case "openDoctorVisit": self = .openDoctorVisit
         case "openDoctorReport": self = .openDoctorReport
+        case "openHealthReport": self = .openHealthReport
         case "openPrescriptionScanner": self = .openPrescriptionScanner
         case "openFamilyCare": self = .openFamilyCare
         case "openProfile": self = .openProfile

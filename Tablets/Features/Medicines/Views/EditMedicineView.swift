@@ -244,12 +244,26 @@ struct EditMedicineView: View {
 
         Task {
             let scheduled = await MedicineNotificationScheduler().rescheduleNotifications(for: medicine)
+            await cleanupOrphanNotifications()
+            WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
             if !scheduled {
                 notificationMessage = "Notifications are off. Turn them on to receive medicine reminders."
                 return
             }
-            WidgetCenter.shared.reloadAllTimelines()
             dismiss()
+        }
+    }
+
+    private func cleanupOrphanNotifications() async {
+        do {
+            let activeIDs = try MedicineRepository(modelContext: modelContext)
+                .fetchActiveMedicines()
+                .map { $0.id.uuidString }
+            _ = await MedicineNotificationScheduler().cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set(activeIDs))
+        } catch {
+            #if DEBUG
+            print("[EditMedicineView] Orphan notification cleanup failed: \(error)")
+            #endif
         }
     }
 

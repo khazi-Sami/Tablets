@@ -1,10 +1,19 @@
 import Foundation
 import Observation
+import SwiftData
 
 @MainActor
 @Observable
 final class DashboardViewModel {
     private(set) var dataProvider: DashboardDataProvider?
+    private let insightEngine = DashboardInsightEngine()
+
+    private(set) var userName = ""
+    private(set) var greetingText = "Good morning"
+    private(set) var statusLine = "Loading your care plan..."
+    private(set) var insightCards: [DashboardInsightCardModel] = []
+    private(set) var voiceSuggestionText = "Try: 'What medicine is pending'"
+    private(set) var upcomingMedicines: [DashboardUpcomingMedicineItem] = []
 
     func configure(dataProvider: DashboardDataProvider) {
         if self.dataProvider == nil {
@@ -12,53 +21,80 @@ final class DashboardViewModel {
         }
     }
 
-    func refresh() async {
+    func refresh(modelContext: ModelContext) async {
         await dataProvider?.refresh()
-    }
+        let profile = insightEngine.activeUserProfile(context: modelContext)
+        let fallbackName = UserHealthProfile.userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let profileDisplayName = profile?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let profileName = profile?.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = (profileDisplayName?.isEmpty == false ? profileDisplayName : profileName) ?? fallbackName
 
-    var userName: String {
-        UserHealthProfile.userName.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+        userName = resolvedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        greetingText = insightEngine.morningGreeting(name: userName)
+        voiceSuggestionText = insightEngine.voiceSuggestion(profile: profile, context: modelContext)
+        upcomingMedicines = insightEngine.upcomingMedicines(context: modelContext)
 
-    var title: String {
-        let hour = Calendar.current.component(.hour, from: .now)
-        switch hour {
-        case 5..<12: return "Good morning"
-        case 12..<17: return "Good afternoon"
-        default: return "Good evening"
+        let medicineSummary = insightEngine.medicinesSummary(context: modelContext)
+        let bpSummary = insightEngine.bpSummary(context: modelContext)
+        let sugarSummary = insightEngine.sugarSummary(context: modelContext)
+        let periodSummary = insightEngine.periodSummary(context: modelContext)
+        let pregnancySummary = insightEngine.pregnancySummary(context: modelContext)
+
+        statusLine = bpSummary ?? sugarSummary ?? medicineSummary
+
+        var cards = [
+            DashboardInsightCardModel(
+                kind: .medicines,
+                title: "Today's routine",
+                summary: medicineSummary,
+                icon: "pills.fill"
+            )
+        ]
+
+        if let bpSummary {
+            cards.append(
+                DashboardInsightCardModel(
+                    kind: .bloodPressure,
+                    title: "Blood pressure",
+                    summary: bpSummary,
+                    icon: HealthRecordType.bloodPressure.icon
+                )
+            )
         }
-    }
 
-    var greetingText: String {
-        userName.isEmpty ? title : "\(title), \(userName)"
-    }
-
-    var statusLine: String {
-        guard let dataProvider else { return "Loading your care plan..." }
-        if dataProvider.todayMedicineLogs.isEmpty {
-            if let bp = dataProvider.latestBP {
-                return "No medicines scheduled today · Last BP: \(bpDisplay(bp))"
-            }
-            if dataProvider.latestSugar == nil {
-                return "Sugar not logged today"
-            }
-            return "No medicines scheduled today"
+        if let sugarSummary {
+            cards.append(
+                DashboardInsightCardModel(
+                    kind: .sugar,
+                    title: "Blood sugar",
+                    summary: sugarSummary,
+                    icon: HealthRecordType.bloodSugar.icon
+                )
+            )
         }
 
-        if dataProvider.pendingCountToday == 0 {
-            return "All medicines taken today"
+        if let periodSummary {
+            cards.append(
+                DashboardInsightCardModel(
+                    kind: .period,
+                    title: "Women's health",
+                    summary: periodSummary,
+                    icon: "calendar.badge.clock"
+                )
+            )
         }
 
-        var parts = ["\(dataProvider.pendingCountToday) medicines pending"]
-        if let bp = dataProvider.latestBP {
-            parts.append("Last BP: \(bpDisplay(bp))")
-        } else if dataProvider.latestSugar == nil {
-            parts.append("Sugar not logged today")
+        if let pregnancySummary {
+            cards.append(
+                DashboardInsightCardModel(
+                    kind: .pregnancy,
+                    title: "Pregnancy",
+                    summary: pregnancySummary,
+                    icon: "figure.maternity"
+                )
+            )
         }
-        return parts.joined(separator: " · ")
-    }
 
-    private func bpDisplay(_ record: HealthRecord) -> String {
-        "\(Int(record.value1))/\(Int(record.value2 ?? 0))"
+        insightCards = cards
     }
 }

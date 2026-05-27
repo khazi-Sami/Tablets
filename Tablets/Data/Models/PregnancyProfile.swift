@@ -3,15 +3,15 @@ import SwiftData
 
 @Model
 final class PregnancyProfile {
-    @Attribute(.unique) var id: UUID
-    var lastMenstrualPeriodDate: Date
-    var dueDate: Date
-    var dueDateIsManual: Bool
-    var pregnancyStartedAt: Date
-    var isActive: Bool
+    @Attribute(.unique) var id: UUID = UUID()
+    var lastMenstrualPeriodDate: Date = Date()
+    var dueDate: Date = Date()
+    var dueDateIsManual: Bool = false
+    var pregnancyStartedAt: Date = Date()
+    var isActive: Bool = true
     var babyNickname: String?
     var notes: String?
-    var createdAt: Date
+    var createdAt: Date = Date()
     var hydrationRemindersEnabled: Bool?
     var supplementRemindersEnabled: Bool?
     var lastOpenedAt: Date?

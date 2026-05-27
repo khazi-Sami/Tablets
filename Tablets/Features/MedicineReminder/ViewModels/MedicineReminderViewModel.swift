@@ -64,7 +64,7 @@ final class MedicineReminderViewModel {
         do {
             try modelContext.save()
             cancelFollowUpIfNeeded(for: medicine, scheduledAt: log.scheduledTime, status: status, modelContext: modelContext)
-            WidgetCenter.shared.reloadAllTimelines()
+            WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
         } catch {
             caringMessage = "I could not save this reminder just now. Please try again."
             HapticsManager.notification(.error)

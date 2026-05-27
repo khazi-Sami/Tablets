@@ -5,6 +5,11 @@ struct PregnancySetupView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = PregnancySetupViewModel()
     @State private var step = 0
+    let onCompleted: (PregnancyProfile) -> Void
+
+    init(onCompleted: @escaping (PregnancyProfile) -> Void = { _ in }) {
+        self.onCompleted = onCompleted
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,22 +25,49 @@ struct PregnancySetupView: View {
                                 .font(PregnancyTheme.titleFont)
                                 .foregroundStyle(AppColor.ink)
                             stepContent
+                            if let validationMessage = viewModel.validationMessage {
+                                Text(validationMessage)
+                                    .font(PregnancyTheme.captionFont)
+                                    .foregroundStyle(AppColor.softRed)
+                                    .accessibilityLabel(validationMessage)
+                            }
+                            if let saveErrorMessage = viewModel.saveErrorMessage {
+                                Text(saveErrorMessage)
+                                    .font(PregnancyTheme.captionFont)
+                                    .foregroundStyle(AppColor.softRed)
+                                    .accessibilityLabel(saveErrorMessage)
+                            }
                         }
                     }
                     Spacer()
                     Button {
+                        guard viewModel.validateCurrentStep(step) else { return }
+
                         if step < 2 {
+                            #if DEBUG
+                            print("[PregnancySetup] Moving from step \(step) to step \(step + 1)")
+                            #endif
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) { step += 1 }
-                        } else {
-                            viewModel.saveProfile(context: modelContext)
+                        } else if let profile = viewModel.saveProfile(context: modelContext) {
+                            #if DEBUG
+                            print("[PregnancySetup] Setup completed. profileID=\(profile.id)")
+                            #endif
+                            onCompleted(profile)
                         }
                     } label: {
-                        Text(step == 2 ? "Start My Journey" : "Continue")
-                            .font(PregnancyTheme.bodyFont.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 56)
-                            .background(PregnancyTheme.deepRose, in: RoundedRectangle(cornerRadius: PregnancyTheme.buttonRadius))
+                        HStack {
+                            if viewModel.isSaving {
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            Text(viewModel.isSaving ? "Saving..." : step == 2 ? "Start My Journey" : "Continue")
+                                .font(PregnancyTheme.bodyFont.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .background(PregnancyTheme.deepRose.opacity(viewModel.isSaving ? 0.72 : 1), in: RoundedRectangle(cornerRadius: PregnancyTheme.buttonRadius))
                     }
+                    .disabled(viewModel.isSaving)
                 }
                 .padding(PregnancyTheme.pagePadding)
             }

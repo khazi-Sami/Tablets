@@ -22,13 +22,13 @@ struct MedicinesView: View {
                     if medicines.isEmpty {
                         VStack(spacing: Spacing.medium) {
                             VoiceCoachingCard(
-                                message: "No medicines saved yet.",
+                                message: "Add your first medicine to start reminders.",
                                 command: "Add medicine"
                             )
 
                             EmptyStateView(
                                 title: "No medicines",
-                                message: "Create your medicine list and reminders.",
+                                message: "Add your first medicine to start reminders.",
                                 systemImage: "pills",
                                 actionTitle: "Add Medicine"
                             ) {
@@ -38,6 +38,14 @@ struct MedicinesView: View {
                         .padding(Spacing.medium)
                     } else {
                         List {
+                            InlineFeatureHint(
+                                id: "medicines_beginner",
+                                message: "Tap + to add a medicine or open a medicine row to manage reminders.",
+                                systemImage: "plus.circle.fill"
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+
                             searchAndFilter
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
@@ -238,7 +246,7 @@ struct MedicinesView: View {
         do {
             try modelContext.save()
             MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(for: medicine, scheduledAt: scheduledTime)
-            WidgetCenter.shared.reloadAllTimelines()
+            WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
             HapticsManager.notification(.success)
         } catch {
             viewModel.errorMessage = error.localizedDescription
@@ -465,6 +473,8 @@ private struct StockChip: View {
 #if DEBUG
 private struct PendingNotificationsDebugView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(filter: #Predicate<Medicine> { $0.isActive == true }) private var activeMedicines: [Medicine]
     @State private var notifications: [MedicineNotificationScheduler.PendingMedicineNotification]
     @State private var authorizationStatus = "Checking"
     @State private var testMessage: String?
@@ -478,10 +488,24 @@ private struct PendingNotificationsDebugView: View {
             List {
                 Section("Authorization") {
                     LabeledContent("Status", value: authorizationStatus)
+                    LabeledContent("Active medicine IDs", value: "\(activeMedicineIDs.count)")
+                    LabeledContent("Pending medicine notifications", value: "\(medicineNotificationCount)")
+                    LabeledContent("Orphan pending notifications", value: "\(orphanNotificationCount)")
                     Button {
                         Task { await sendTestNotification() }
                     } label: {
                         Label("Send Test Notification in 10 Seconds", systemImage: "bell.badge.fill")
+                    }
+                    Button {
+                        Task { await cleanOrphanNotifications() }
+                    } label: {
+                        Label("Clean Orphan Notifications", systemImage: "trash.fill")
+                    }
+                    Button {
+                        WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
+                        testMessage = "Widget timelines refreshed."
+                    } label: {
+                        Label("Refresh Widget Snapshot", systemImage: "arrow.clockwise")
                     }
                     if let testMessage {
                         Text(testMessage)
@@ -532,6 +556,22 @@ private struct PendingNotificationsDebugView: View {
         }
     }
 
+    private var activeMedicineIDs: Set<String> {
+        Set(activeMedicines.map { $0.id.uuidString })
+    }
+
+    private var medicineNotificationCount: Int {
+        notifications.filter { $0.id.hasPrefix("medicine_") || $0.medicineID != "-" }.count
+    }
+
+    private var orphanNotificationCount: Int {
+        notifications.filter { notification in
+            guard notification.id.hasPrefix("medicine_") || notification.medicineID != "-" else { return false }
+            guard notification.medicineID != "-" else { return true }
+            return activeMedicineIDs.contains(notification.medicineID) == false
+        }.count
+    }
+
     private func diagnosticRow(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
@@ -547,6 +587,14 @@ private struct PendingNotificationsDebugView: View {
     private func sendTestNotification() async {
         let success = await MedicineNotificationScheduler().scheduleTestNotificationIn10Seconds()
         testMessage = success ? "Test notification scheduled. Lock the phone or leave the app to verify sound." : "Notifications are not authorized. Open iOS Settings and allow notifications for Tablets."
+        await refreshDiagnostics()
+    }
+
+    private func cleanOrphanNotifications() async {
+        let cancelled = await MedicineNotificationScheduler()
+            .cleanupOrphanedMedicineNotifications(activeMedicineIDs: activeMedicineIDs)
+        WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
+        testMessage = cancelled == 0 ? "No orphan notifications found." : "Cancelled \(cancelled) orphan notification(s)."
         await refreshDiagnostics()
     }
 

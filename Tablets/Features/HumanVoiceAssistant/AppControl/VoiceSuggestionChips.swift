@@ -22,7 +22,7 @@ enum VoiceSuggestionChips {
             daily = ["How is my BP?", "Next period?", "Medicine schedule"]
         }
 
-        return Array((daily + ["Open medicines", "Scan prescription", "Help"]).uniqued().prefix(6))
+        return Array((["Add my first medicine", "Log BP", "What medicine is next?"] + daily + ["Open medicines", "Help"]).uniqued().prefix(6))
     }
 }
 

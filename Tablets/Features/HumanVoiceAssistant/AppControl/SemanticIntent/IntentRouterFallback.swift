@@ -179,6 +179,14 @@ struct IntentRouterFallback {
             "monthly health", "period health", "menstrual health"
         ]) { return .openPeriods }
 
+        // Health Report PDF
+        if has(text, [
+            "generate health report", "create health report",
+            "export my health data", "make my report",
+            "make health report", "open health report",
+            "personal health report", "full health report"
+        ]) { return .openHealthReport }
+
         // Doctor Report PDF
         if has(text, [
             "generate doctor report", "create my health report",
@@ -319,6 +327,8 @@ struct IntentRouterFallback {
         // Help
         if has(text, [
             "help", "confused", "what can you do", "guide",
+            "what can i do", "how do i use this app", "where do i start",
+            "i'm confused", "im confused", "start using app",
             "i dont know", "i am lost", "lost", "what do i say",
             "how does this work", "teach me", "show commands",
             "what can i ask", "guide me", "i need help",

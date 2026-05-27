@@ -78,6 +78,12 @@ struct MoreView: View {
                             }
 
                             NavigationLink {
+                                HealthReportView()
+                            } label: {
+                                MoreDestinationRow(title: "Health Report", subtitle: "Generate a full local PDF health report", systemImage: "doc.text.magnifyingglass", color: AppColor.mintGreenDeep)
+                            }
+
+                            NavigationLink {
                                 PrescriptionScannerView()
                             } label: {
                                 MoreDestinationRow(title: "Prescription Scanner", subtitle: "Create medicine drafts from prescription photos", systemImage: "text.viewfinder", color: AppColor.lavenderDeep)
@@ -127,6 +133,9 @@ struct MoreView: View {
             .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openDoctorReport)) { _ in
                 voiceDestination = .doctorReport
             }
+            .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openHealthReport)) { _ in
+                voiceDestination = .healthReport
+            }
             .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openPrescriptionScanner)) { _ in
                 voiceDestination = .prescriptionScanner
             }
@@ -151,6 +160,7 @@ private enum MoreVoiceDestination: Identifiable {
     case addPeriodLog
     case doctorVisit
     case doctorReport
+    case healthReport
     case prescriptionScanner
     case familyCare
     case profile
@@ -162,6 +172,7 @@ private enum MoreVoiceDestination: Identifiable {
         case .addPeriodLog: return "addPeriodLog"
         case .doctorVisit: return "doctorVisit"
         case .doctorReport: return "doctorReport"
+        case .healthReport: return "healthReport"
         case .prescriptionScanner: return "prescriptionScanner"
         case .familyCare: return "familyCare"
         case .profile: return "profile"
@@ -180,6 +191,8 @@ private enum MoreVoiceDestination: Identifiable {
             DoctorVisitView()
         case .doctorReport:
             DoctorReportPreviewView()
+        case .healthReport:
+            HealthReportView()
         case .prescriptionScanner:
             PrescriptionScannerView()
         case .familyCare:

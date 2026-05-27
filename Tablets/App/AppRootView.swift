@@ -2,8 +2,15 @@ import AVFoundation
 import SwiftData
 import SwiftUI
 import UserNotifications
+import WidgetKit
 
 struct AppRootView: View {
+    let isAppLockAllowed: Bool
+
+    init(isAppLockAllowed: Bool = true) {
+        self.isAppLockAllowed = isAppLockAllowed
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Query private var assistantPreferences: [HumanAssistantPreference]
     @StateObject private var router = AppRouter()
@@ -22,6 +29,12 @@ struct AppRootView: View {
     @State private var bubbleHideTask: Task<Void, Never>?
     @State private var tipHideTask: Task<Void, Never>?
     @State private var lastInlineVoiceTapAt = Date.distantPast
+    @State private var appLockService = AppLockService()
+    @AppStorage(AppPreferenceKeys.theme) private var themePreference = AppThemePreference.system.rawValue
+    @AppStorage(AppPreferenceKeys.textSize) private var textSizePreference = AppTextSizePreference.standard.rawValue
+    @AppStorage(AppPreferenceKeys.boldText) private var boldTextEnabled = false
+    @AppStorage(AppPreferenceKeys.reduceAnimations) private var reduceAnimations = false
+    @AppStorage(AppPreferenceKeys.appLockEnabled) private var appLockEnabled = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -91,9 +104,25 @@ struct AppRootView: View {
             .padding(.trailing, Spacing.medium)
             .padding(.bottom, 82)
             .zIndex(10_000)
+
+            if appLockService.isLocked {
+                AppLockView(errorMessage: appLockService.errorMessage) {
+                    Task { await appLockService.unlock() }
+                }
+                .zIndex(20_000)
+                .transition(.opacity)
+            }
         }
         .environmentObject(router)
         .tint(AppColor.medicalBlue)
+        .preferredColorScheme(preferredColorScheme)
+        .dynamicTypeSize(dynamicTypeSizeRange)
+        .environment(\.legibilityWeight, boldTextEnabled ? .bold : .regular)
+        .transaction { transaction in
+            if reduceAnimations {
+                transaction.animation = nil
+            }
+        }
         .sheet(isPresented: $isShowingHumanAssistant) {
             HumanVoiceAssistantView(appRouter: router)
                 .onAppear {
@@ -126,13 +155,24 @@ struct AppRootView: View {
             Text(WhisperModelManager.shared.isReady ? "Offline voice model is ready. Voice understanding runs on this device." : "Offline voice model is not ready yet. Open the full assistant to download it.")
         }
         .onAppear {
-            UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
-            MedicineNotificationDelegate.shared.configure(modelContext: modelContext)
-            schedulePregnancyHydrationIfNeeded()
-            DebugStartupLogger.log("AppRootView.onAppear selectedTab=\(router.selectedTab.title) healthKitEnabled=\(UserHealthProfile.healthKitEnabled) modelReady=\(WhisperModelManager.shared.isReady)")
+            handleRootAppear()
         }
         .onChange(of: router.selectedTab) { _, newValue in
-            DebugStartupLogger.log("AppRootView selectedTab changed to \(newValue.title)")
+            DebugStartupLogger.log("AppRootView selectedTab changed")
+        }
+        .onChange(of: scenePhaseForLock) { _, phase in
+            switch phase {
+            case .background:
+                appLockService.lockIfNeeded(canLock: canUseAppLock)
+            case .inactive:
+                if appLockEnabled && canUseAppLock {
+                    appLockService.lockIfNeeded(canLock: true)
+                }
+            case .active:
+                break
+            default:
+                break
+            }
         }
         .onChange(of: isShowingHumanAssistant) { _, isPresented in
             DebugStartupLogger.log("isShowingHumanAssistant changed to \(isPresented)")
@@ -149,6 +189,37 @@ struct AppRootView: View {
         .onReceive(NotificationCenter.default.publisher(for: VoiceNavigationNotification.openMedicineReminder)) { _ in
             router.selectedTab = .medicines
         }
+        .onReceive(NotificationCenter.default.publisher(for: .quickStartOpenAddMedicine)) { _ in
+            router.selectedTab = .medicines
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NotificationCenter.default.post(name: VoiceNavigationNotification.openAddMedicine, object: nil)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickStartOpenBPLog)) { _ in
+            router.selectedTab = .healthTracking
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NotificationCenter.default.post(name: VoiceNavigationNotification.openBPLog, object: nil)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickStartOpenHealthKit)) { _ in
+            router.selectedTab = .more
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NotificationCenter.default.post(name: VoiceNavigationNotification.openSettings, object: nil)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickStartOpenHealthReport)) { _ in
+            router.selectedTab = .more
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                NotificationCenter.default.post(name: VoiceNavigationNotification.openHealthReport, object: nil)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickStartHighlightVoice)) { _ in
+            showBubble("Tap here and try: What medicine is next?")
+            isShowingSuggestionChips = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dashboardStartInlineVoiceRequested)) { _ in
+            handleInlineVoiceTap()
+        }
         .onOpenURL { url in
             handleDeepLink(url)
         }
@@ -157,10 +228,37 @@ struct AppRootView: View {
             DebugStartupLogger.log("Received dashboardVoicePhraseRequested: \(phrase)")
             Task { await processSuggestionChip(phrase) }
         }
-        .task {
-            DebugStartupLogger.log("AppRootView.task started")
-            DebugStartupLogger.log("HealthKit auto authorization skipped; permissions are requested only from Apple Health settings")
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch AppThemePreference(rawValue: themePreference) ?? .system {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
         }
+    }
+
+    private var dynamicTypeSizeRange: ClosedRange<DynamicTypeSize> {
+        switch AppTextSizePreference(rawValue: textSizePreference) ?? .standard {
+        case .standard: return .small ... .accessibility1
+        case .large: return .medium ... .accessibility2
+        case .extraLarge: return .large ... .accessibility3
+        }
+    }
+
+    @Environment(\.scenePhase) private var scenePhaseForLock
+
+    private var canUseAppLock: Bool {
+        isAppLockAllowed
+    }
+
+    private func handleRootAppear() {
+        UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
+        MedicineNotificationDelegate.shared.configure(modelContext: modelContext)
+        cleanupOrphanMedicineNotifications()
+        WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
+        schedulePregnancyHydrationIfNeeded()
+        DebugStartupLogger.log("AppRootView.onAppear completed")
     }
 
     private func handleInlineVoiceTap() {
@@ -193,6 +291,27 @@ struct AppRootView: View {
             if result != .scheduled {
                 profile.hydrationRemindersEnabled = false
                 try? modelContext.save()
+            }
+        }
+    }
+
+    private func cleanupOrphanMedicineNotifications() {
+        Task {
+            do {
+                let activeIDs = try MedicineRepository(modelContext: modelContext)
+                    .fetchActiveMedicines()
+                    .map { $0.id.uuidString }
+                let cancelled = await MedicineNotificationScheduler()
+                    .cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set(activeIDs))
+                #if DEBUG
+                if cancelled > 0 {
+                    print("[AppRootView] Cleaned \(cancelled) orphan medicine notification(s)")
+                }
+                #endif
+            } catch {
+                #if DEBUG
+                print("[AppRootView] Orphan medicine notification cleanup failed: \(error)")
+                #endif
             }
         }
     }

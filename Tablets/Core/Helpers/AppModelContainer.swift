@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 
 enum AppModelContainer {
-    private static let appGroupID = "group.com.developer.apple.Tablets"
+    private static let appGroupID = AppPreferenceKeys.appGroupID
+    private static let storeName = "TabletsModelV12"
 
     static func makeState() -> AppModelContainerState {
         do {
@@ -41,6 +42,7 @@ enum AppModelContainer {
             AssistantInteractionMemory.self,
             ReminderBehaviorMemory.self
             ,
+            UserProfile.self,
             PregnancyProfile.self,
             PregnancySymptomLog.self,
             PregnancyWeightLog.self,
@@ -53,7 +55,7 @@ enum AppModelContainer {
             BirthPlan.self
         ])
         let configuration = ModelConfiguration(
-            "TabletsModelV11",
+            storeName,
             schema: schema,
             isStoredInMemoryOnly: false,
             groupContainer: .identifier(appGroupID)
@@ -71,12 +73,15 @@ enum AppModelContainer {
         let supportURL = containerURL
             .appendingPathComponent("Library", isDirectory: true)
             .appendingPathComponent("Application Support", isDirectory: true)
-        let storeURL = supportURL.appendingPathComponent("TabletsModelV11.store")
-        let relatedURLs = [
-            storeURL,
-            URL(fileURLWithPath: storeURL.path + "-shm"),
-            URL(fileURLWithPath: storeURL.path + "-wal")
-        ]
+        let storeNames = [storeName, "TabletsModelV11"]
+        let relatedURLs = storeNames.flatMap { name in
+            let storeURL = supportURL.appendingPathComponent("\(name).store")
+            return [
+                storeURL,
+                URL(fileURLWithPath: storeURL.path + "-shm"),
+                URL(fileURLWithPath: storeURL.path + "-wal")
+            ]
+        }
 
         for url in relatedURLs where fileManager.fileExists(atPath: url.path) {
             try fileManager.removeItem(at: url)

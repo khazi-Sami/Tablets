@@ -318,7 +318,7 @@ struct AddMedicineView: View {
                         let engine = AdaptiveReminderEngine(modelContext: modelContext)
                         let scheduler = AdaptiveReminderScheduler(engine: engine, modelContext: modelContext)
                         _ = await scheduler.applyAdaptiveShifts()
-                        WidgetCenter.shared.reloadAllTimelines()
+                        WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
                             dismiss()

@@ -10,10 +10,18 @@ final class MedicinesViewModel: ObservableObject {
 
     func delete(_ medicine: Medicine, modelContext: ModelContext) {
         Task {
-            await MedicineNotificationScheduler().cancelNotifications(for: medicine)
+            let medicineID = medicine.id.uuidString
+            let medicineName = medicine.name
+            let followUpManager = MissedDoseFollowUpManager(modelContext: modelContext)
+            await MedicineNotificationScheduler().cancelNotifications(forMedicineID: medicineID, medicineName: medicineName)
+            await followUpManager.cancelAllFollowUps(for: medicineID)
             do {
                 try MedicineRepository(modelContext: modelContext).delete(medicine)
-                WidgetCenter.shared.reloadAllTimelines()
+                let activeIDs = try MedicineRepository(modelContext: modelContext)
+                    .fetchActiveMedicines()
+                    .map { $0.id.uuidString }
+                _ = await MedicineNotificationScheduler().cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set(activeIDs))
+                WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
             } catch {
                 errorMessage = error.localizedDescription
             }

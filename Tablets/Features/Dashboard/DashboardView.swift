@@ -4,6 +4,7 @@ import SwiftUI
 extension Notification.Name {
     static let healthDataDidUpdate = Notification.Name("HealthDataDidUpdate")
     static let dashboardVoicePhraseRequested = Notification.Name("DashboardVoicePhraseRequested")
+    static let dashboardStartInlineVoiceRequested = Notification.Name("DashboardStartInlineVoiceRequested")
 }
 
 struct DashboardView: View {
@@ -47,6 +48,29 @@ struct DashboardView: View {
                     LazyVStack(alignment: .leading, spacing: 20) {
                         GreetingHeader(title: viewModel.greetingText, subtitle: viewModel.statusLine)
                             .dashboardEntrance(didAppear: didAppear, delay: 0.02)
+
+                        InlineFeatureHint(
+                            id: "dashboard_beginner",
+                            message: "Your dashboard becomes smarter as you log medicines, BP, sugar, and wellness data.",
+                            systemImage: "sparkles"
+                        )
+                        .dashboardEntrance(didAppear: didAppear, delay: 0.025)
+
+                        DashboardVoiceSuggestionPill(
+                            suggestion: viewModel.voiceSuggestionText,
+                            isElderlyMode: elderlyMode
+                        ) {
+                            NotificationCenter.default.post(name: .dashboardStartInlineVoiceRequested, object: nil)
+                        }
+                        .dashboardEntrance(didAppear: didAppear, delay: 0.03)
+
+                        DashboardInsightCardsSection(cards: viewModel.insightCards, isElderlyMode: elderlyMode)
+                            .dashboardEntrance(didAppear: didAppear, delay: 0.035)
+
+                        DashboardUpcomingMedicinesSection(items: viewModel.upcomingMedicines, isElderlyMode: elderlyMode) {
+                            isShowingAddMedicine = true
+                        }
+                        .dashboardEntrance(didAppear: didAppear, delay: 0.038)
 
                         HealthCompanionCard(userName: viewModel.userName.isEmpty ? "there" : viewModel.userName)
                             .dashboardEntrance(didAppear: didAppear, delay: 0.04)
@@ -142,7 +166,7 @@ struct DashboardView: View {
                     .padding(.bottom, 140)
                 }
                 .refreshable {
-                    await dataProvider?.refresh()
+                    await viewModel.refresh(modelContext: modelContext)
                 }
             }
             .navigationTitle("Dashboard")
@@ -150,14 +174,14 @@ struct DashboardView: View {
                 DebugStartupLogger.log("DashboardView.task started dataProviderExists=\(dataProvider != nil)")
                 configureProviderIfNeeded()
                 DebugStartupLogger.log("DashboardView provider configured")
-                await viewModel.refresh()
+                await viewModel.refresh(modelContext: modelContext)
                 DebugStartupLogger.log("DashboardViewModel.refresh finished; setting didAppear=true")
                 didAppear = true
             }
             .onChange(of: scenePhase) { newPhase in
                 DebugStartupLogger.log("DashboardView scenePhase changed to \(String(describing: newPhase))")
                 if newPhase == .active {
-                    Task { await viewModel.refresh() }
+                    Task { await viewModel.refresh(modelContext: modelContext) }
                 }
             }
             .onChange(of: didAppear) { newValue in
@@ -165,7 +189,7 @@ struct DashboardView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .healthDataDidUpdate)) { _ in
                 DebugStartupLogger.log("DashboardView received HealthDataDidUpdate")
-                Task { await viewModel.refresh() }
+                Task { await viewModel.refresh(modelContext: modelContext) }
             }
             .sheet(isPresented: $isShowingAddMedicine) {
                 AddMedicineView()
@@ -329,7 +353,7 @@ struct DashboardView: View {
         guard let medicine = fetchMedicine(id: next.medicineID) else {
             carePlanErrorText = "Could not find that medicine. Please refresh and try again."
             isSavingMedicineLog = false
-            Task { await viewModel.refresh() }
+            Task { await viewModel.refresh(modelContext: modelContext) }
             return
         }
         modelContext.insert(MedicineLog(medicine: medicine, scheduledTime: next.scheduledAt, takenTime: .now, status: .taken))
@@ -337,7 +361,7 @@ struct DashboardView: View {
             try modelContext.save()
             MissedDoseFollowUpManager(modelContext: modelContext).cancelFollowUp(for: medicine, scheduledAt: next.scheduledAt)
             NotificationCenter.default.post(name: .healthDataDidUpdate, object: nil)
-            Task { await viewModel.refresh() }
+            Task { await viewModel.refresh(modelContext: modelContext) }
         } catch {
             carePlanErrorText = "Could not save that dose. Please try again."
             print("[DashboardView] Could not save taken medicine log: \(error)")
@@ -356,6 +380,184 @@ struct DashboardView: View {
             print("[DashboardView] Could not fetch medicine for dashboard action: \(error)")
             return nil
         }
+    }
+}
+
+private struct DashboardVoiceSuggestionPill: View {
+    let suggestion: String
+    let isElderlyMode: Bool
+    let tapAction: () -> Void
+
+    var body: some View {
+        Button(action: tapAction) {
+            HStack(spacing: 10) {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: isElderlyMode ? 40 : 34, height: isElderlyMode ? 40 : 34)
+                    .background(AppColor.medicalBlue, in: Circle())
+
+                Text(suggestion)
+                    .font(isElderlyMode ? AppFont.bodyStrong : AppFont.caption)
+                    .foregroundStyle(AppColor.medicalBlueDeep)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Image(systemName: "waveform")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppColor.medicalBlue)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: isElderlyMode ? 60 : 52, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [AppColor.medicalBlue.opacity(0.10), AppColor.mintGreen.opacity(0.12)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Start voice assistant. \(suggestion)")
+    }
+}
+
+private struct DashboardInsightCardsSection: View {
+    let cards: [DashboardInsightCardModel]
+    let isElderlyMode: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DashboardSectionTitle("Based on your logs")
+            if cards.isEmpty {
+                InsightEmptyStateCard(
+                    icon: "sparkles",
+                    title: "Dashboard insights will build here",
+                    message: "Start logging BP, sugar, or medicines to see a more personal summary."
+                )
+            } else {
+                ForEach(cards) { card in
+                    InsightSummaryCard(card: card, isElderlyMode: isElderlyMode)
+                }
+            }
+        }
+    }
+}
+
+private struct DashboardUpcomingMedicinesSection: View {
+    let items: [DashboardUpcomingMedicineItem]
+    let isElderlyMode: Bool
+    let addMedicine: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DashboardSectionTitle("Coming up")
+            if items.isEmpty {
+                InsightEmptyStateCard(
+                    icon: "clock.badge.checkmark",
+                    title: "No medicines due in the next 2 hours",
+                    message: "Add medicines to build your routine, or keep tracking what's already saved."
+                )
+            } else {
+                ForEach(items) { item in
+                    HStack(spacing: 12) {
+                        Image(systemName: "pills.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(AppColor.medicalBlue)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.name)
+                                .font(isElderlyMode ? AppFont.bodyStrong : AppFont.sectionTitle)
+                                .foregroundStyle(AppColor.ink)
+                            Text("\(item.dosage) - \(item.scheduledAt.formatted(date: .omitted, time: .shortened))")
+                                .font(AppFont.caption)
+                                .foregroundStyle(AppColor.secondaryInk)
+                        }
+                        Spacer()
+                    }
+                    .padding(16)
+                    .background(.regularMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+private struct InsightSummaryCard: View {
+    let card: DashboardInsightCardModel
+    let isElderlyMode: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: card.icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(accentColor)
+                .frame(width: 40, height: 40)
+                .background(accentColor.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(card.title)
+                    .font(isElderlyMode ? AppFont.bodyStrong : AppFont.badge)
+                    .foregroundStyle(AppColor.secondaryInk)
+                Text(card.summary)
+                    .font(isElderlyMode ? AppFont.bodyStrong : AppFont.body)
+                    .foregroundStyle(AppColor.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+    }
+
+    private var accentColor: Color {
+        switch card.kind {
+        case .medicines: return AppColor.medicalBlue
+        case .bloodPressure: return AppColor.softRed
+        case .sugar: return .orange
+        case .period: return AppColor.lavenderDeep
+        case .pregnancy: return AppColor.mintGreenDeep
+        }
+    }
+}
+
+private struct InsightEmptyStateCard: View {
+    let icon: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(AppColor.medicalBlue)
+                .frame(width: 40, height: 40)
+                .background(AppColor.medicalBlue.opacity(0.10))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(AppFont.bodyStrong)
+                    .foregroundStyle(AppColor.ink)
+                Text(message)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.secondaryInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

@@ -105,7 +105,8 @@ enum SampleData {
             UserHealthHabit.self,
             HealthPatternMemory.self,
             AssistantInteractionMemory.self,
-            ReminderBehaviorMemory.self
+            ReminderBehaviorMemory.self,
+            UserProfile.self
         ])
             let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             let container = try ModelContainer(for: schema, configurations: [configuration])
@@ -116,6 +117,7 @@ enum SampleData {
             periodCycles.forEach { container.mainContext.insert($0) }
             womensHealthLogs.forEach { container.mainContext.insert($0) }
             container.mainContext.insert(CyclePredictionSettings())
+            container.mainContext.insert(UserProfile(name: "Sam", hasCompletedOnboarding: true, displayName: "Sam"))
 
             if let firstMedicine = medicines.first {
                 container.mainContext.insert(

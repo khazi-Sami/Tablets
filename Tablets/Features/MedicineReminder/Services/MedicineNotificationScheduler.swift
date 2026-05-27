@@ -120,14 +120,41 @@ struct MedicineNotificationScheduler {
     }
 
     func cancelNotifications(for medicine: Medicine) async {
+        await cancelNotifications(forMedicineID: medicine.id.uuidString, medicineName: medicine.name)
+    }
+
+    func cancelNotifications(forMedicineID medicineID: String, medicineName: String? = nil) async {
         let pendingRequests = await notificationCenter.pendingNotificationRequests()
         let matchingIdentifiers = pendingRequests
+            .filter { request in
+                notificationMedicineID(from: request) == medicineID ||
+                request.identifier.contains(medicineID)
+            }
             .map(\.identifier)
-            .filter { $0.contains(medicine.id.uuidString) }
 
         guard !matchingIdentifiers.isEmpty else { return }
         notificationCenter.removePendingNotificationRequests(withIdentifiers: matchingIdentifiers)
-        debugLog("Cancelled \(matchingIdentifiers.count) notifications for \(medicine.name)")
+        debugLog("Cancelled \(matchingIdentifiers.count) notifications for \(medicineName ?? medicineID)")
+    }
+
+    func cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set<String>) async -> Int {
+        let pendingRequests = await notificationCenter.pendingNotificationRequests()
+        let orphanIdentifiers = pendingRequests.compactMap { request -> String? in
+            guard isMedicineNotification(request) else { return nil }
+            guard let medicineID = notificationMedicineID(from: request) else {
+                return request.identifier
+            }
+            return activeMedicineIDs.contains(medicineID) ? nil : request.identifier
+        }
+
+        guard orphanIdentifiers.isEmpty == false else {
+            debugLog("No orphan medicine notifications found")
+            return 0
+        }
+
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: orphanIdentifiers)
+        debugLog("Cancelled orphan medicine notifications: \(orphanIdentifiers.joined(separator: ", "))")
+        return orphanIdentifiers.count
     }
 
     #if DEBUG
@@ -278,6 +305,34 @@ struct MedicineNotificationScheduler {
         default:
             return "Unknown"
         }
+    }
+
+    private func isMedicineNotification(_ request: UNNotificationRequest) -> Bool {
+        request.identifier.hasPrefix("medicine_") ||
+        request.identifier.hasPrefix("medicine_followup_") ||
+        request.identifier.hasPrefix("medicine_snooze_") ||
+        request.content.userInfo["medicineID"] != nil
+    }
+
+    private func notificationMedicineID(from request: UNNotificationRequest) -> String? {
+        if let medicineID = request.content.userInfo["medicineID"] as? String {
+            return medicineID
+        }
+
+        let identifier = request.identifier
+        if identifier.hasPrefix("medicine_followup_") {
+            let remainder = identifier.dropFirst("medicine_followup_".count)
+            return remainder.split(separator: "_").first.map(String.init)
+        }
+        if identifier.hasPrefix("medicine_snooze_") {
+            let remainder = identifier.dropFirst("medicine_snooze_".count)
+            return remainder.split(separator: "_").first.map(String.init)
+        }
+        if identifier.hasPrefix("medicine_") {
+            let remainder = identifier.dropFirst("medicine_".count)
+            return remainder.split(separator: "_").first.map(String.init)
+        }
+        return nil
     }
 
     private func authorizationStatusText(_ status: UNAuthorizationStatus) -> String {

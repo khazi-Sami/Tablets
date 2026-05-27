@@ -11,8 +11,10 @@ final class TTSService: ObservableObject, TTSServiceProtocol {
         stop()
         configureAudioSessionForSpeech()
         let utterance = AVSpeechUtterance(string: text)
+        let speedRawValue = UserDefaults.standard.string(forKey: AppPreferenceKeys.voiceSpeed)
+        let speed = VoiceSpeedPreference(rawValue: speedRawValue ?? VoiceSpeedPreference.normal.rawValue)
         let prefersSlowerVoice = UserDefaults.standard.bool(forKey: AssistantAccessibilitySettings.slowerVoiceKey)
-        utterance.rate = prefersSlowerVoice ? 0.36 : 0.45
+        utterance.rate = speed?.speechRate ?? (prefersSlowerVoice ? 0.36 : 0.45)
         utterance.pitchMultiplier = 1.02
         utterance.volume = 1.0
         utterance.voice = AVSpeechSynthesisVoice(identifier: preferredVoiceIdentifier) ?? AVSpeechSynthesisVoice(language: "en-US")
