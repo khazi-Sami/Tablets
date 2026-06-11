@@ -19,7 +19,7 @@ struct AlertsWidgetView: View {
                         Text("Safety watch is on")
                             .font(AppFont.sectionTitle)
                             .foregroundStyle(AppColor.ink)
-                        Text("Tablets will flag readings that may need doctor guidance.")
+                        Text("BanyAI will flag readings that may need doctor guidance.")
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.secondaryInk)
                     }

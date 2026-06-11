@@ -72,7 +72,7 @@ struct ProfileView: View {
                 }
                 .disabled(resetText != "RESET")
             } message: {
-                Text("This deletes local Tablets data, clears settings, voice history, and pending notifications. Type RESET to confirm.")
+                Text("This deletes local BanyAI data, clears settings, voice history, and pending notifications. Type RESET to confirm.")
             }
             .alert("Sign out?", isPresented: $isShowingSignOutAlert) {
                 Button("Cancel", role: .cancel) {}
@@ -80,7 +80,7 @@ struct ProfileView: View {
                     signOut()
                 }
             } message: {
-                Text("This keeps your local health data on this device and returns Tablets to the welcome screen.")
+                Text("This keeps your local health data on this device and returns BanyAI to the welcome screen.")
             }
             .onChange(of: genderRawValue) { _, newValue in
                 if newValue == UserProfileGender.male.rawValue {
@@ -143,7 +143,7 @@ struct ProfileView: View {
         settingsCard("Accessibility", icon: "accessibility.fill") {
             settingsToggle("Haptics", subtitle: "Gentle vibration feedback for key actions.", icon: "iphone.radiowaves.left.and.right", isOn: $isHapticsEnabled)
             settingsToggle("Bold text", subtitle: "Increase text emphasis across the app.", icon: "bold", isOn: $boldTextEnabled)
-            settingsToggle("Reduce animations", subtitle: "Keep motion calmer throughout Tablets.", icon: "circle.dashed", isOn: $reduceAnimations)
+            settingsToggle("Reduce animations", subtitle: "Keep motion calmer throughout BanyAI.", icon: "circle.dashed", isOn: $reduceAnimations)
             settingsToggle("Elderly-friendly mode", subtitle: "Use calmer, easier-to-read assistant behavior.", icon: "textformat.size", isOn: $elderlyMode)
             settingsToggle("High contrast", subtitle: "Prefer stronger visual contrast for key controls.", icon: "circle.lefthalf.filled", isOn: $highContrast)
         }
@@ -358,6 +358,7 @@ struct ProfileView: View {
         guard resetText == "RESET" else { return }
         isResetting = true
         do {
+            HealthAppIntegrityChecker.cleanupForAppReset()
             try await DataExportService().resetLocalAppData(context: modelContext)
             statusMessage = "Reset complete."
             NotificationCenter.default.post(name: .authSignOutRequested, object: nil)

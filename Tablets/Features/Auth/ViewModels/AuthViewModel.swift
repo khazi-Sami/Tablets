@@ -130,6 +130,7 @@ final class AuthViewModel {
 
     func signOut(context: ModelContext) {
         clearError()
+        HealthAppIntegrityChecker.cleanupForSignOut()
         clearSession(reason: "Sign out requested")
         isLoading = true
         defer { isLoading = false }

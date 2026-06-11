@@ -16,7 +16,7 @@ struct AuthGateView: View {
                 } else {
                     switch authViewModel.authState {
                     case .checking:
-                        ProgressView("Preparing Tablets...")
+                        ProgressView("Preparing BanyAI...")
                     case .welcome:
                         WelcomeView(
                             isLoading: authViewModel.isLoading,

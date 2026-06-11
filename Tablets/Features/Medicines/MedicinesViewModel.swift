@@ -19,6 +19,7 @@ final class MedicinesViewModel: ObservableObject {
                 try MedicineRepository(modelContext: modelContext).delete(medicine)
                 let activeIDs = try MedicineRepository(modelContext: modelContext)
                     .fetchActiveMedicines()
+                    .filter(HealthAppIntegrityChecker.isValidMedicine)
                     .map { $0.id.uuidString }
                 _ = await MedicineNotificationScheduler().cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set(activeIDs))
                 WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)

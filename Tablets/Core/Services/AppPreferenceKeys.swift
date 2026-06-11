@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppPreferenceKeys {
-    static let appGroupID = "group.com.developer.apple.Tablets"
+    static let appGroupID = "group.com.samisiddiqui.BanyAI"
     static let sharedDefaults = UserDefaults(suiteName: appGroupID) ?? .standard
 
     static let theme = "settings_theme"

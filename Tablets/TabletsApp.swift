@@ -43,6 +43,7 @@ struct TabletsApp: App {
                 },
                 resetLocalData: {
                     do {
+                        HealthAppIntegrityChecker.cleanupForAppReset()
                         try AppModelContainer.resetLocalStoreForRecovery()
                         modelContainerState = AppModelContainer.makeState()
                     } catch {

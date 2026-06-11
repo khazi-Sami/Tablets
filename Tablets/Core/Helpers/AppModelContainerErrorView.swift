@@ -63,7 +63,7 @@ struct AppModelContainerErrorView: View {
             Button("Reset Local Data", role: .destructive, action: resetLocalData)
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This removes local Tablets data stored on this device. Use this only if retry does not work and you understand the data may not be recoverable.")
+            Text("This removes local BanyAI data stored on this device. Use this only if retry does not work and you understand the data may not be recoverable.")
         }
     }
 }

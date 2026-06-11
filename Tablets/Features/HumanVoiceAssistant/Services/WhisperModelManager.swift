@@ -72,7 +72,15 @@ final class WhisperModelManager: ObservableObject {
     }
 
     func selectBestModelForDevice(preferAccuracy: Bool = true) {
-        selectedModel = .tiny
+        let selectedName = WhisperModelSelector().selectedModelName(preferAccuracy: preferAccuracy)
+        selectedModel = WhisperLocalModel(modelName: selectedName) ?? .tiny
+        refreshState()
+    }
+
+    func selectModel(_ model: WhisperLocalModel) {
+        guard !isDownloading, !isLoading else { return }
+        selectedModel = model
+        modelError = nil
         refreshState()
     }
 
@@ -105,7 +113,7 @@ final class WhisperModelManager: ObservableObject {
     }
 
     func install(_ model: WhisperLocalModel) async {
-        selectedModel = .tiny
+        selectedModel = model
         modelError = nil
         downloadProgress = 0
         downloadedBytes = 0
@@ -511,6 +519,13 @@ enum WhisperLocalModel: String, CaseIterable, Identifiable {
         switch self {
         case .tiny: return "Whisper Tiny"
         case .base: return "Whisper Base"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .tiny: return "Fastest download, good for quick commands."
+        case .base: return "Better accuracy for natural speech."
         }
     }
 

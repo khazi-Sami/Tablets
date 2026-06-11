@@ -66,9 +66,22 @@
 		D48060642286747D0AD83551 /* HomeScreenSmallView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeScreenSmallView.swift; path = TabletsWidget/Views/HomeScreenSmallView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		916AF0402FD7211200265780 /* Exceptions for "Tablets" folder in "Tablets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 916E88EE2FB629870025F2A8 /* Tablets */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		916E88F12FB629870025F2A8 /* Tablets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				916AF0402FD7211200265780 /* Exceptions for "Tablets" folder in "Tablets" target */,
+			);
 			path = Tablets;
 			sourceTree = "<group>";
 		};
@@ -316,7 +329,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACH_O_TYPE = mh_execute;
-				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets.TabletsWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.samisiddiqui.BanyAIApp.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -361,7 +374,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = Y2X42G855N;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -425,7 +437,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = Y2X42G855N;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -458,14 +469,16 @@
 				DEVELOPMENT_TEAM = Y2X42G855N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Tablets uses the camera to scan prescription photos for medicine reminder drafts.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tablets reads your steps, sleep, and heart rate from Apple Health to give you wellness insights alongside your medicine and health logs.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tablets can save your BP, sugar, and weight readings to Apple Health so all your health data stays in sync.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Tablets uses the microphone so you can speak health logging commands to the voice assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Tablets uses speech recognition to understand your spoken health assistant commands on device.";
+				INFOPLIST_FILE = Tablets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BanyAI;
+				INFOPLIST_KEY_CFBundleName = BanyAI;
+				INFOPLIST_KEY_NSCameraUsageDescription = "BanyAI uses the camera to scan prescription photos for medicine reminder drafts.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "BanyAI reads your steps, sleep, and heart rate from Apple Health to give you wellness insights alongside your medicine and health logs.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "BanyAI can save your BP, sugar, and weight readings to Apple Health so all your health data stays in sync.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "BanyAI uses the microphone so you can speak health logging commands to the voice assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "BanyAI uses speech recognition to understand your spoken health assistant commands on device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -474,7 +487,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.samisiddiqui.BanyAIApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -497,14 +510,16 @@
 				DEVELOPMENT_TEAM = Y2X42G855N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Tablets uses the camera to scan prescription photos for medicine reminder drafts.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tablets reads your steps, sleep, and heart rate from Apple Health to give you wellness insights alongside your medicine and health logs.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tablets can save your BP, sugar, and weight readings to Apple Health so all your health data stays in sync.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Tablets uses the microphone so you can speak health logging commands to the voice assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Tablets uses speech recognition to understand your spoken health assistant commands on device.";
+				INFOPLIST_FILE = Tablets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BanyAI;
+				INFOPLIST_KEY_CFBundleName = BanyAI;
+				INFOPLIST_KEY_NSCameraUsageDescription = "BanyAI uses the camera to scan prescription photos for medicine reminder drafts.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "BanyAI reads your steps, sleep, and heart rate from Apple Health to give you wellness insights alongside your medicine and health logs.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "BanyAI can save your BP, sugar, and weight readings to Apple Health so all your health data stays in sync.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "BanyAI uses the microphone so you can speak health logging commands to the voice assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "BanyAI uses speech recognition to understand your spoken health assistant commands on device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -513,7 +528,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.samisiddiqui.BanyAIApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -543,7 +558,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACH_O_TYPE = mh_execute;
-				PRODUCT_BUNDLE_IDENTIFIER = com.developer.apple.Tablets.TabletsWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.samisiddiqui.BanyAIApp.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;

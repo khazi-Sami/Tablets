@@ -62,7 +62,7 @@ struct MedicineNotificationScheduler {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Tablets Test Reminder"
+        content.title = "BanyAI Test Reminder"
         content.body = "This is a test medicine reminder."
         content.sound = .default
         content.userInfo = [
@@ -87,7 +87,7 @@ struct MedicineNotificationScheduler {
     #endif
 
     func scheduleNotifications(for medicine: Medicine) async -> Bool {
-        guard medicine.isActive else {
+        guard medicine.isActive, HealthAppIntegrityChecker.isValidMedicine(medicine) else {
             await cancelNotifications(for: medicine)
             return true
         }
@@ -137,6 +137,20 @@ struct MedicineNotificationScheduler {
         debugLog("Cancelled \(matchingIdentifiers.count) notifications for \(medicineName ?? medicineID)")
     }
 
+    func cancelAllMedicineNotifications() async {
+        let pendingRequests = await notificationCenter.pendingNotificationRequests()
+        let matchingIdentifiers = pendingRequests
+            .filter(isMedicineNotification)
+            .map(\.identifier)
+
+        guard !matchingIdentifiers.isEmpty else {
+            debugLog("No medicine notifications to cancel")
+            return
+        }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: matchingIdentifiers)
+        debugLog("Cancelled all medicine notifications: \(matchingIdentifiers.count)")
+    }
+
     func cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set<String>) async -> Int {
         let pendingRequests = await notificationCenter.pendingNotificationRequests()
         let orphanIdentifiers = pendingRequests.compactMap { request -> String? in
@@ -147,13 +161,13 @@ struct MedicineNotificationScheduler {
             return activeMedicineIDs.contains(medicineID) ? nil : request.identifier
         }
 
+        debugLog("Orphan notifications found: \(orphanIdentifiers.count)")
         guard orphanIdentifiers.isEmpty == false else {
-            debugLog("No orphan medicine notifications found")
             return 0
         }
 
         notificationCenter.removePendingNotificationRequests(withIdentifiers: orphanIdentifiers)
-        debugLog("Cancelled orphan medicine notifications: \(orphanIdentifiers.joined(separator: ", "))")
+        debugLog("Orphan notifications removed: \(orphanIdentifiers.joined(separator: ", "))")
         return orphanIdentifiers.count
     }
 
@@ -189,8 +203,9 @@ struct MedicineNotificationScheduler {
         let scheduledDate = nextScheduledDate(for: medicine, time: time)
 
         let content = UNMutableNotificationContent()
-        content.title = "Time for \(medicine.name)"
-        content.body = bodyText(for: medicine)
+        let text = notificationText(for: medicine, scheduledDate: scheduledDate)
+        content.title = text.title
+        content.body = text.body
         content.sound = .default
         content.categoryIdentifier = RichNotificationController.categoryIdentifier
         content.userInfo = [
@@ -208,31 +223,58 @@ struct MedicineNotificationScheduler {
         )
     }
 
-    private func bodyText(for medicine: Medicine) -> String {
-        let instruction = medicine.instruction.title
-        guard !medicine.dosage.isEmpty else { return instruction }
-        return "\(medicine.dosage) • \(instruction)"
+    private func notificationText(for medicine: Medicine, scheduledDate: Date) -> (title: String, body: String) {
+        let displayName = medicineDisplayName(medicine)
+        let hour = calendar.component(.hour, from: scheduledDate)
+        let title: String
+        if hour < 12 {
+            title = "Good morning!"
+        } else if hour < 17 {
+            title = "Medicine reminder"
+        } else {
+            title = "Evening medicine"
+        }
+
+        let body: String
+        if hour < 12 {
+            body = "🌅 Good morning! Time for \(displayName)."
+        } else if hour < 17 {
+            body = "☀️ Medicine reminder: \(displayName)."
+        } else {
+            body = "🌙 Time for your evening medicine."
+        }
+
+        if medicine.stockCount > 0, medicine.stockCount <= medicine.lowStockAlertCount {
+            return (title, "⚠️ \(medicine.name) is running low. Only \(medicine.stockCount) tablets left.")
+        }
+        return (title, body)
+    }
+
+    private func medicineDisplayName(_ medicine: Medicine) -> String {
+        let dosage = medicine.dosage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !dosage.isEmpty else { return medicine.name }
+        return "\(medicine.name) \(dosage)"
     }
 
     private func configureMedicineNotificationCategory() {
         let taken = UNNotificationAction(
             identifier: RichNotificationController.takenActionIdentifier,
-            title: "Mark Taken",
+            title: "Taken",
             options: [.foreground, .authenticationRequired]
         )
         let snooze = UNNotificationAction(
             identifier: RichNotificationController.snoozeActionIdentifier,
-            title: "Snooze 10",
+            title: "Snooze 10 min",
             options: [.foreground]
         )
-        let skip = UNNotificationAction(
-            identifier: RichNotificationController.skipActionIdentifier,
-            title: "Skip",
-            options: []
+        let openApp = UNNotificationAction(
+            identifier: RichNotificationController.openAppActionIdentifier,
+            title: "Open App",
+            options: [.foreground]
         )
         let category = UNNotificationCategory(
             identifier: RichNotificationController.categoryIdentifier,
-            actions: [taken, snooze, skip],
+            actions: [taken, snooze, openApp],
             intentIdentifiers: [],
             options: [.customDismissAction]
         )

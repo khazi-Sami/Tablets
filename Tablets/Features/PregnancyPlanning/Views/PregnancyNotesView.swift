@@ -96,7 +96,7 @@ struct PregnancyNotesView: View {
                     Text("No notes yet")
                         .font(PregnancyTheme.headingFont)
                         .foregroundStyle(AppColor.ink)
-                    Text("Add a quick note when something comes to mind. Tablets will keep it here for you.")
+                    Text("Add a quick note when something comes to mind. BanyAI will keep it here for you.")
                         .font(PregnancyTheme.bodyFont)
                         .foregroundStyle(AppColor.secondaryInk)
                 }

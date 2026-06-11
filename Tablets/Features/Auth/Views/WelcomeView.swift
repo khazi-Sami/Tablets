@@ -34,7 +34,7 @@ struct WelcomeView: View {
                             .foregroundStyle(AppColor.medicalBlue)
                     }
 
-                    Text("Tablets")
+                    Text("BanyAI")
                         .font(.system(.largeTitle, design: .rounded).weight(.bold))
                         .foregroundColor(AppColor.ink)
 

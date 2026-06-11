@@ -23,15 +23,15 @@ final class HealthKitVoiceQueryHandler {
 
         if containsAny(text, ["is apple health connected", "apple health connected", "healthkit connected"]) {
             if !service.isAvailable {
-                return "Apple Health is not available on this device. Tablets still works with your saved logs."
+                return "Apple Health is not available on this device. BanyAI still works with your saved logs."
             }
             return service.isAuthorized ? "Apple Health is connected. I can use it for steps, sleep, and heart insights with your permission." : notConnected
         }
 
         if containsAny(text, ["can you save my bp to apple health", "save bp to apple health", "save blood pressure to apple health", "save sugar to apple health"]) {
             return UserHealthProfile.healthKitWriteEnabled
-                ? "Yes. When Apple Health write sync is enabled and permission is granted, I can save BP, sugar, and weight readings to Apple Health after saving them in Tablets."
-                : "Apple Health write sync is off. Your readings are saved in Tablets. You can turn Apple Health write sync on from the Apple Health screen."
+                ? "Yes. When Apple Health write sync is enabled and permission is granted, I can save BP, sugar, and weight readings to Apple Health after saving them in BanyAI."
+                : "Apple Health write sync is off. Your readings are saved in BanyAI. You can turn Apple Health write sync on from the Apple Health screen."
         }
 
         if containsAny(text, ["turn off apple health", "disable apple health", "stop apple health", "how do i turn off apple health"]) {

@@ -44,7 +44,7 @@ final class AppLockService {
         do {
             let success = try await context.evaluatePolicy(
                 .deviceOwnerAuthentication,
-                localizedReason: "Unlock Tablets to view your local health data."
+                localizedReason: "Unlock BanyAI to view your local health data."
             )
             isLocked = !success
             errorMessage = success ? nil : "Authentication was not completed."

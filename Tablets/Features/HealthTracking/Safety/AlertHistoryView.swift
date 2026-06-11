@@ -11,7 +11,7 @@ struct AlertHistoryView: View {
                         if alerts.isEmpty {
                             EmptyStateView(
                                 title: "No safety alerts yet",
-                                message: "If a saved reading needs attention, Tablets will show it here with supportive next steps.",
+                                message: "If a saved reading needs attention, BanyAI will show it here with supportive next steps.",
                                 systemImage: "checkmark.shield.fill"
                             )
                             .padding(.top, Spacing.xLarge)

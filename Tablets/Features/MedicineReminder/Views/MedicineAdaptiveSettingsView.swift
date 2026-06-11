@@ -16,7 +16,7 @@ struct MedicineAdaptiveSettingsView: View {
         NavigationStack {
             List {
                 Section {
-            Text("Tablets can learn when you usually take each reminder time and gently adjust the suggestion. This is just a helpful reminder adjustment.")
+            Text("BanyAI can learn when you usually take each reminder time and gently adjust the suggestion. This is just a helpful reminder adjustment.")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.secondaryInk)
                 }
@@ -75,7 +75,7 @@ struct MedicineAdaptiveSettingsView: View {
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.secondaryInk)
                     } else {
-                        Text("Keep taking medicines. After a few doses, Tablets will learn your routine.")
+                        Text("Keep taking medicines. After a few doses, BanyAI will learn your routine.")
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.secondaryInk)
                     }

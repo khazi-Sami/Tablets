@@ -176,7 +176,7 @@ struct InternalTestChecklistView: View {
         let progress = completionProgress
 
         var lines: [String] = [
-            "Tablets Internal TestFlight Checklist",
+            "BanyAI Internal TestFlight Checklist",
             "Generated: \(Date().formatted(date: .abbreviated, time: .shortened))",
             "Device: \(UIDevice.current.name)",
             "iOS: \(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",

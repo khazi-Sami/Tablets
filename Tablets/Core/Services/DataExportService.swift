@@ -24,7 +24,7 @@ struct DataExportService {
 
         let data = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
         let url = FileManager.default.temporaryDirectory
-            .appending(path: "Tablets-Data-Export-\(UUID().uuidString).json")
+            .appending(path: "BanyAI-Data-Export-\(UUID().uuidString).json")
         try data.write(to: url, options: [.atomic])
         return url
     }
@@ -90,7 +90,7 @@ struct DataExportService {
 
     private func appInfo() -> [String: Any] {
         [
-            "name": "Tablets",
+            "name": "BanyAI",
             "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
             "build": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
         ]

@@ -29,7 +29,7 @@ struct AppLockView: View {
                 }
 
                 VStack(spacing: Spacing.xSmall) {
-                    Text("Unlock Tablets")
+                    Text("Unlock BanyAI")
                         .font(AppFont.title)
                         .foregroundStyle(AppColor.ink)
                     Text("Use Face ID, Touch ID, or your device passcode.")

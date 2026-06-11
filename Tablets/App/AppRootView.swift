@@ -255,8 +255,7 @@ struct AppRootView: View {
     private func handleRootAppear() {
         UNUserNotificationCenter.current().delegate = MedicineNotificationDelegate.shared
         MedicineNotificationDelegate.shared.configure(modelContext: modelContext)
-        cleanupOrphanMedicineNotifications()
-        WidgetMedicineSnapshotWriter.writeAndReload(context: modelContext)
+        HealthAppIntegrityChecker.cleanupLaunchState(context: modelContext)
         schedulePregnancyHydrationIfNeeded()
         DebugStartupLogger.log("AppRootView.onAppear completed")
     }
@@ -291,27 +290,6 @@ struct AppRootView: View {
             if result != .scheduled {
                 profile.hydrationRemindersEnabled = false
                 try? modelContext.save()
-            }
-        }
-    }
-
-    private func cleanupOrphanMedicineNotifications() {
-        Task {
-            do {
-                let activeIDs = try MedicineRepository(modelContext: modelContext)
-                    .fetchActiveMedicines()
-                    .map { $0.id.uuidString }
-                let cancelled = await MedicineNotificationScheduler()
-                    .cleanupOrphanedMedicineNotifications(activeMedicineIDs: Set(activeIDs))
-                #if DEBUG
-                if cancelled > 0 {
-                    print("[AppRootView] Cleaned \(cancelled) orphan medicine notification(s)")
-                }
-                #endif
-            } catch {
-                #if DEBUG
-                print("[AppRootView] Orphan medicine notification cleanup failed: \(error)")
-                #endif
             }
         }
     }

@@ -84,6 +84,9 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
             saveLog(payload: payload, status: .snoozed)
             scheduleSnooze(payload: payload)
             return true
+        case RichNotificationController.openAppActionIdentifier:
+            routeToMedicineReminder(payload: payload)
+            return true
         case RichNotificationController.skipActionIdentifier:
             saveLog(payload: payload, status: .skipped)
             return true
@@ -106,7 +109,9 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
         descriptor.fetchLimit = 1
 
         do {
-            guard let medicine = try modelContext.fetch(descriptor).first else {
+            guard let medicine = try modelContext.fetch(descriptor).first,
+                  medicine.isActive,
+                  HealthAppIntegrityChecker.isValidMedicine(medicine) else {
                 debugLog("Cannot save action log; medicine not found")
                 return
             }
@@ -134,8 +139,8 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
         guard let medicineName = fetchMedicineName(medicineID: payload.medicineID) else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "Time for \(medicineName)"
-        content.body = "Just checking in again."
+        content.title = "Medicine reminder"
+        content.body = "☀️ Medicine reminder: \(medicineName)."
         content.sound = .default
         content.categoryIdentifier = RichNotificationController.categoryIdentifier
         content.userInfo = [
@@ -194,7 +199,10 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
             return
         }
 
-        let medicineName = fetchMedicineName(medicineID: payload.medicineID) ?? "your medicine"
+        guard let medicineName = fetchMedicineName(medicineID: payload.medicineID) else {
+            debugLog("Follow-up skipped because medicine is missing or inactive")
+            return
+        }
         let manager = MissedDoseFollowUpManager(modelContext: modelContext)
         await manager.scheduleFollowUp(
             for: payload.medicineID,
@@ -210,7 +218,13 @@ final class MedicineNotificationDelegate: NSObject, UNUserNotificationCenterDele
             predicate: #Predicate<Medicine> { $0.id == uuid }
         )
         descriptor.fetchLimit = 1
-        return try? modelContext.fetch(descriptor).first?.name
+        guard let medicine = try? modelContext.fetch(descriptor).first,
+              medicine.isActive,
+              HealthAppIntegrityChecker.isValidMedicine(medicine) else {
+            return nil
+        }
+        let dosage = medicine.dosage.trimmingCharacters(in: .whitespacesAndNewlines)
+        return dosage.isEmpty ? medicine.name : "\(medicine.name) \(dosage)"
     }
 
     private func debugLog(_ message: String) {

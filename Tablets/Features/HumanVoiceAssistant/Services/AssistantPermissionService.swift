@@ -12,6 +12,6 @@ struct AssistantPermissionService {
     }
 
     var permissionMessage: String {
-        "Microphone access lets Tablets understand health commands you speak. Audio is processed locally for the voice assistant, and your health data is saved only on this device."
+        "Microphone access lets BanyAI understand health commands you speak. Audio is processed locally for the voice assistant, and your health data is saved only on this device."
     }
 }

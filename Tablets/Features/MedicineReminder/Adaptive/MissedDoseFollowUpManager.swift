@@ -79,8 +79,8 @@ final class MissedDoseFollowUpManager {
         let identifier = followUpIdentifier(medicineID: medicineID, scheduledTimeKey: scheduledTimeKey)
         let content = UNMutableNotificationContent()
         content.title = "Quick medicine check"
-        content.body = "Did you take \(medicineName)? Just checking in. 💙"
-        content.categoryIdentifier = "MISSED_DOSE_FOLLOWUP"
+        content.body = "💙 Just checking in — did you take \(medicineName)?"
+        content.categoryIdentifier = RichNotificationController.categoryIdentifier
         content.sound = .default
         content.userInfo = [
             "medicineID": medicineID,

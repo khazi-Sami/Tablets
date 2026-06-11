@@ -421,6 +421,8 @@ struct AssistantMicControlButton: View {
 }
 
 struct AIModelDownloadCard: View {
+    let availableModels: [WhisperLocalModel]
+    let selectedModel: WhisperLocalModel
     let modelTitle: String
     let estimatedSize: String
     let estimatedSetupTime: String
@@ -434,6 +436,7 @@ struct AIModelDownloadCard: View {
     let totalText: String
     let modelState: WhisperModelState
     let errorMessage: String?
+    let selectModel: (WhisperLocalModel) -> Void
     let action: () -> Void
 
     var body: some View {
@@ -451,6 +454,8 @@ struct AIModelDownloadCard: View {
                             .foregroundStyle(AppColor.secondaryInk)
                     }
                 }
+
+                modelPicker
 
                 VStack(alignment: .leading, spacing: Spacing.xSmall) {
                     setupRow("Model", value: modelTitle)
@@ -488,7 +493,52 @@ struct AIModelDownloadCard: View {
         if isInstalling { return "Downloading..." }
         if isLoading { return "Loading..." }
         if case .failed = modelState { return "Retry Download" }
-        return "Download AI Model"
+        return "Download \(modelTitle)"
+    }
+
+    private var modelPicker: some View {
+        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+            Text("Choose voice model")
+                .font(AppFont.badge)
+                .foregroundStyle(AppColor.secondaryInk)
+
+            ForEach(availableModels) { model in
+                Button {
+                    selectModel(model)
+                } label: {
+                    HStack(spacing: Spacing.small) {
+                        Image(systemName: selectedModel == model ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(selectedModel == model ? AppColor.medicalBlue : AppColor.secondaryInk)
+                            .frame(width: 24, height: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(model.title)
+                                .font(AppFont.bodyStrong)
+                                .foregroundStyle(AppColor.ink)
+                            Text(model.subtitle)
+                                .font(AppFont.caption)
+                                .foregroundStyle(AppColor.secondaryInk)
+                                .lineLimit(2)
+                        }
+
+                        Spacer()
+
+                        Text(model.estimatedSize)
+                            .font(AppFont.badge)
+                            .foregroundStyle(AppColor.secondaryInk)
+                    }
+                    .padding(Spacing.small)
+                    .background(.white.opacity(selectedModel == model ? 0.82 : 0.48), in: RoundedRectangle(cornerRadius: AppCornerRadius.medium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppCornerRadius.medium, style: .continuous)
+                            .stroke((selectedModel == model ? AppColor.medicalBlue : AppColor.medicalBlue.opacity(0.10)), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isInstalling || isLoading)
+            }
+        }
     }
 
     private func setupRow(_ title: String, value: String) -> some View {

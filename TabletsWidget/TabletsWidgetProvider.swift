@@ -18,13 +18,18 @@ struct TabletsWidgetProvider: TimelineProvider {
 }
 
 enum WidgetMedicineDataSource {
-    private static let appGroupID = "group.com.developer.apple.Tablets"
+    private static let appGroupID = "group.com.samisiddiqui.BanyAI"
     private static let snapshotFileName = "medicine_widget_snapshot.json"
     private static let calendar = Calendar.current
 
     static func loadEntry(now: Date = .now) -> MedicineWidgetEntry {
         guard let snapshot = loadSnapshot() else {
-            return emptyEntry(now: now, hasAnyMedicines: false, message: nil)
+            let message = WidgetAppPreferenceKeys.hasCompletedSession ? nil : "Sign in to continue."
+            return emptyEntry(now: now, hasAnyMedicines: false, message: message)
+        }
+
+        guard isValid(snapshot: snapshot) else {
+            return emptyEntry(now: now, hasAnyMedicines: false, message: "Open BanyAI to refresh your health data.")
         }
 
         return MedicineWidgetEntry(
@@ -46,7 +51,8 @@ enum WidgetMedicineDataSource {
             adaptiveInsight: snapshot.adaptiveInsight,
             hasAnyMedicines: snapshot.hasAnyMedicines,
             hasMedicinesDueToday: snapshot.hasMedicinesDueToday,
-            errorMessage: snapshot.errorMessage
+            errorMessage: snapshot.errorMessage,
+            activeMedicineIDs: snapshot.activeMedicineIDs ?? []
         )
     }
 
@@ -81,8 +87,22 @@ enum WidgetMedicineDataSource {
             adaptiveInsight: nil,
             hasAnyMedicines: hasAnyMedicines,
             hasMedicinesDueToday: false,
-            errorMessage: message
+            errorMessage: message,
+            activeMedicineIDs: []
         )
+    }
+
+    private static func isValid(snapshot: WidgetMedicineSnapshot) -> Bool {
+        if snapshot.errorMessage != nil { return true }
+        guard let medicineIDs = snapshot.activeMedicineIDs else { return false }
+        let activeIDs = Set(medicineIDs)
+        if let nextMedicineID = snapshot.nextMedicineID, !activeIDs.contains(nextMedicineID) {
+            return false
+        }
+        return snapshot.upcomingMedicines.allSatisfy { upcoming in
+            guard let medicineID = upcoming.medicineID else { return false }
+            return activeIDs.contains(medicineID)
+        }
     }
 
     private static func loadSnapshot() -> WidgetMedicineSnapshot? {
@@ -117,10 +137,22 @@ private struct WidgetMedicineSnapshot: Codable {
     let hasAnyMedicines: Bool
     let hasMedicinesDueToday: Bool
     let errorMessage: String?
+    let activeMedicineIDs: [String]?
 }
 
 private struct WidgetMedicineSnapshotUpcoming: Codable {
     let time: String
     let name: String
     let status: String
+    let medicineID: String?
+}
+
+private enum WidgetAppPreferenceKeys {
+    static let appGroupID = "group.com.samisiddiqui.BanyAI"
+    static let completedSession = "tablets_has_completed_session"
+    static let sharedDefaults = UserDefaults(suiteName: appGroupID) ?? .standard
+
+    static var hasCompletedSession: Bool {
+        UserDefaults.standard.bool(forKey: completedSession) || sharedDefaults.bool(forKey: completedSession)
+    }
 }

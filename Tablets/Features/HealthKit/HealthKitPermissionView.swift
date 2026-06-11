@@ -24,8 +24,8 @@ struct HealthKitPermissionView: View {
                             manageAction: { isShowingPermissionsHelp.toggle() }
                         )
                         privacySection
-                        permissionSection(title: "What Tablets reads", rows: readRows)
-                        permissionSection(title: "What Tablets can write", rows: writeRows)
+                        permissionSection(title: "What BanyAI reads", rows: readRows)
+                        permissionSection(title: "What BanyAI can write", rows: writeRows)
 
                         Toggle("Automatically save readings to Apple Health", isOn: $writeEnabled)
                             .font(AppFont.bodyStrong)
@@ -68,7 +68,7 @@ struct HealthKitPermissionView: View {
             Text("Apple Health Connection")
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.ink)
-            Text("Tablets combines your Apple Health data with your medicine and health logs for wellness insights and clearer voice answers.")
+            Text("BanyAI combines your Apple Health data with your medicine and health logs for wellness insights and clearer voice answers.")
                 .font(AppFont.body)
                 .foregroundStyle(AppColor.secondaryInk)
             Text("Your Apple Health data stays on your device and is only used with your permission.")
@@ -87,7 +87,7 @@ struct HealthKitPermissionView: View {
                 Text("Apple Health is not available on this device.")
                     .font(AppFont.bodyStrong)
                     .foregroundStyle(AppColor.ink)
-                Text("You can keep using Tablets with your saved medicine and health logs.")
+                Text("You can keep using BanyAI with your saved medicine and health logs.")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.secondaryInk)
             }
@@ -182,7 +182,7 @@ struct HealthKitPermissionView: View {
             .buttonStyle(.plain)
 
             if isShowingPermissionsHelp {
-                Text("Open the iOS Health app, tap your profile picture, choose Apps and Services, then Tablets. You can turn individual read and write permissions on or off there.")
+                Text("Open the iOS Health app, tap your profile picture, choose Apps and Services, then BanyAI. You can turn individual read and write permissions on or off there.")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.secondaryInk)
                     .fixedSize(horizontal: false, vertical: true)

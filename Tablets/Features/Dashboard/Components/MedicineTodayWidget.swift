@@ -169,7 +169,7 @@ struct MedicineTodayWidget: View {
 
     private var adaptiveInsight: some View {
         Label {
-            Text(viewModel.nextPendingDose?.adaptiveInsight ?? "Keep taking medicines. After a few doses, Tablets will learn your routine.")
+            Text(viewModel.nextPendingDose?.adaptiveInsight ?? "Keep taking medicines. After a few doses, BanyAI will learn your routine.")
                 .font(.caption)
                 .foregroundStyle(AppColor.secondaryInk)
         } icon: {

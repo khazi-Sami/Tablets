@@ -114,7 +114,7 @@ struct PrescriptionScannerView: View {
 
     private var warningCard: some View {
         PillCardContainer(style: .lavender) {
-            Label("Please verify all medicine details before saving. Tablets only extracts and organizes user-provided prescription text.", systemImage: "exclamationmark.shield.fill")
+            Label("Please verify all medicine details before saving. BanyAI only extracts and organizes user-provided prescription text.", systemImage: "exclamationmark.shield.fill")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.secondaryInk)
         }

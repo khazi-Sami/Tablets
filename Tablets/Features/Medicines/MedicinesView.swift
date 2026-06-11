@@ -557,7 +557,7 @@ private struct PendingNotificationsDebugView: View {
     }
 
     private var activeMedicineIDs: Set<String> {
-        Set(activeMedicines.map { $0.id.uuidString })
+        Set(activeMedicines.filter(HealthAppIntegrityChecker.isValidMedicine).map { $0.id.uuidString })
     }
 
     private var medicineNotificationCount: Int {
@@ -586,7 +586,7 @@ private struct PendingNotificationsDebugView: View {
 
     private func sendTestNotification() async {
         let success = await MedicineNotificationScheduler().scheduleTestNotificationIn10Seconds()
-        testMessage = success ? "Test notification scheduled. Lock the phone or leave the app to verify sound." : "Notifications are not authorized. Open iOS Settings and allow notifications for Tablets."
+        testMessage = success ? "Test notification scheduled. Lock the phone or leave the app to verify sound." : "Notifications are not authorized. Open iOS Settings and allow notifications for BanyAI."
         await refreshDiagnostics()
     }
 

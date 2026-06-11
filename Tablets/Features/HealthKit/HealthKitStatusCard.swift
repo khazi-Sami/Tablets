@@ -21,7 +21,7 @@ struct HealthKitStatusCard: View {
             case .notConnected:
                 return "Connect Apple Health for steps, sleep, and heart insights."
             case .unavailable:
-                return "This device does not support Apple Health. Tablets still works with your saved logs."
+                return "This device does not support Apple Health. BanyAI still works with your saved logs."
             }
         }
 

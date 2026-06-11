@@ -41,6 +41,8 @@ final class HumanVoiceAssistantViewModel: ObservableObject {
     var isPreparingModel: Bool { speechService.isPreparingModel }
     var modelName: String { speechService.modelName }
     var selectedModelTitle: String { modelManager.selectedModelDisplayName }
+    var availableModels: [WhisperLocalModel] { modelManager.availableModels }
+    var selectedModel: WhisperLocalModel { modelManager.selectedModel }
     var selectedModelSize: String { modelManager.selectedModel.estimatedSize }
     var selectedModelSetupTime: String { modelManager.selectedModel.estimatedSetupTime }
     var isLocalModelAvailable: Bool { speechService.isLocalModelAvailable }
@@ -97,8 +99,15 @@ final class HumanVoiceAssistantViewModel: ObservableObject {
         }
     }
 
+    func selectModel(_ model: WhisperLocalModel) {
+        modelManager.selectModel(model)
+        assistantText = "\(model.title) selected. Download it once, then voice works offline."
+    }
+
     func preloadModelIfPossible() {
-        modelManager.selectBestModelForDevice(preferAccuracy: true)
+        if !modelManager.isInstalled() {
+            modelManager.selectBestModelForDevice(preferAccuracy: true)
+        }
     }
 
     func toggleListening(modelContext: ModelContext, medicines: [Medicine], medicineLogs: [MedicineLog], healthRecords: [HealthRecord], symptomLogs: [WomensHealthDailyLog], interactions: [AssistantInteractionMemory], preferences: HumanAssistantPreference?) {

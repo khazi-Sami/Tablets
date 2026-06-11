@@ -357,7 +357,7 @@ struct ResponseEngine {
         let service = HealthKitService()
         service.refreshAuthorizationStatus()
         guard service.isAvailable else {
-            return " Saved in Tablets. Apple Health sync is off or unavailable."
+            return " Saved in BanyAI. Apple Health sync is off or unavailable."
         }
 
         switch type {
@@ -366,17 +366,17 @@ struct ResponseEngine {
                   let diastolic = HealthKitWriteAuthorization.quantityType(.bloodPressureDiastolic),
                   service.authorizationStatus(for: systolic) == .sharingAuthorized,
                   service.authorizationStatus(for: diastolic) == .sharingAuthorized else {
-                return " Saved in Tablets. Apple Health sync is off or unavailable."
+                return " Saved in BanyAI. Apple Health sync is off or unavailable."
             }
         case .bloodSugar:
             guard let glucose = HealthKitWriteAuthorization.quantityType(.bloodGlucose),
                   service.authorizationStatus(for: glucose) == .sharingAuthorized else {
-                return " Saved in Tablets. Apple Health sync is off or unavailable."
+                return " Saved in BanyAI. Apple Health sync is off or unavailable."
             }
         case .weight:
             guard let weight = HealthKitWriteAuthorization.quantityType(.bodyMass),
                   service.authorizationStatus(for: weight) == .sharingAuthorized else {
-                return " Saved in Tablets. Apple Health sync is off or unavailable."
+                return " Saved in BanyAI. Apple Health sync is off or unavailable."
             }
         default:
             return ""

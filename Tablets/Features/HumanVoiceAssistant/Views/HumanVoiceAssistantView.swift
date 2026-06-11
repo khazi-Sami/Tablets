@@ -60,8 +60,10 @@ struct HumanVoiceAssistantView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if !viewModel.modelManager.isReady || viewModel.isInstallingModel || viewModel.isModelLoading {
+                        if !viewModel.modelManager.isReady || viewModel.isInstallingModel || viewModel.isModelLoading || !viewModel.modelManager.isInstalled(.base) {
                             AIModelDownloadCard(
+                                availableModels: viewModel.availableModels,
+                                selectedModel: viewModel.selectedModel,
                                 modelTitle: viewModel.selectedModelTitle,
                                 estimatedSize: viewModel.selectedModelSize,
                                 estimatedSetupTime: viewModel.selectedModelSetupTime,
@@ -74,10 +76,14 @@ struct HumanVoiceAssistantView: View {
                                 downloadedText: viewModel.modelDownloadedText,
                                 totalText: viewModel.modelTotalText,
                                 modelState: viewModel.modelState,
-                                errorMessage: viewModel.modelInstallError
-                            ) {
-                                viewModel.installLocalModel()
-                            }
+                                errorMessage: viewModel.modelInstallError,
+                                selectModel: { model in
+                                    viewModel.selectModel(model)
+                                },
+                                action: {
+                                    viewModel.installLocalModel()
+                                }
+                            )
                         }
 
                         AssistantMicControlButton(

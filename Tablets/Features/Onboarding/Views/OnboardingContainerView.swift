@@ -62,7 +62,7 @@ struct OnboardingContainerView: View {
     private var content: some View {
         switch step {
         case 0:
-            Text("Tell Tablets what to call you.")
+            Text("Tell BanyAI what to call you.")
                 .font(AppFont.body)
                 .foregroundStyle(AppColor.secondaryInk)
             TextField("Your name", text: $name)

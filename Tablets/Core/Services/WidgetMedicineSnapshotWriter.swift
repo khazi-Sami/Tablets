@@ -23,6 +23,30 @@ enum WidgetMedicineSnapshotWriter {
         }
     }
 
+    static func writeSafeModeAndReload(message: String = "Open BanyAI to refresh your health data.") {
+        writeSystemSnapshot(message: message)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    static func writeSignedOutAndReload() {
+        writeSystemSnapshot(message: HealthAppIntegrityChecker.signedOutWidgetMessage)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    static func isCurrentSnapshotValid(activeMedicineIDs: Set<String>) -> Bool {
+        guard let snapshot = try? loadSnapshot() else {
+            return activeMedicineIDs.isEmpty
+        }
+        guard snapshot.errorMessage == nil else {
+            return activeMedicineIDs.isEmpty
+        }
+        guard Set(snapshot.activeMedicineIDs) == activeMedicineIDs else { return false }
+        if let nextMedicineID = snapshot.nextMedicineID {
+            return activeMedicineIDs.contains(nextMedicineID)
+        }
+        return true
+    }
+
     static func clearAndReload() {
         do {
             let url = try snapshotURL()
@@ -38,14 +62,20 @@ enum WidgetMedicineSnapshotWriter {
     }
 
     private static func makeSnapshot(context: ModelContext, now: Date) throws -> WidgetMedicineSnapshot {
+        guard try hasActiveProfile(context: context) else {
+            return emptySnapshot(now: now, hasAnyMedicines: false, message: HealthAppIntegrityChecker.safeModeMessage)
+        }
+
         let medicines = try fetchActiveMedicines(context: context)
+            .filter(HealthAppIntegrityChecker.isValidMedicine)
+        let activeMedicineIDs = medicines.map { $0.id.uuidString }
         guard medicines.isEmpty == false else {
             return emptySnapshot(now: now, hasAnyMedicines: false, message: nil)
         }
 
         let todayDoses = todayDoses(for: medicines, now: now)
         guard todayDoses.isEmpty == false else {
-            return emptySnapshot(now: now, hasAnyMedicines: true, message: nil)
+            return emptySnapshot(now: now, hasAnyMedicines: true, message: nil, activeMedicineIDs: activeMedicineIDs)
         }
 
         let dayRange = dayRange(containing: now)
@@ -67,7 +97,8 @@ enum WidgetMedicineSnapshotWriter {
                 WidgetMedicineSnapshotUpcoming(
                     time: timeText($0.dose.scheduledAt),
                     name: shortened($0.dose.medicine.name),
-                    status: $0.status.rawValue
+                    status: $0.status.rawValue,
+                    medicineID: $0.dose.medicine.id.uuidString
                 )
             }
 
@@ -88,8 +119,17 @@ enum WidgetMedicineSnapshotWriter {
             adaptiveInsight: nil,
             hasAnyMedicines: true,
             hasMedicinesDueToday: true,
-            errorMessage: nil
+            errorMessage: nil,
+            activeMedicineIDs: activeMedicineIDs
         )
+    }
+
+    private static func hasActiveProfile(context: ModelContext) throws -> Bool {
+        let profiles = try context.fetch(FetchDescriptor<UserProfile>())
+        return profiles.contains { profile in
+            profile.hasCompletedOnboarding &&
+            !profile.loginMethod.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     private static func fetchActiveMedicines(context: ModelContext) throws -> [Medicine] {
@@ -140,7 +180,12 @@ enum WidgetMedicineSnapshotWriter {
         return dose.scheduledAt < now ? .overdue : .pending
     }
 
-    private static func emptySnapshot(now: Date, hasAnyMedicines: Bool, message: String?) -> WidgetMedicineSnapshot {
+    private static func emptySnapshot(
+        now: Date,
+        hasAnyMedicines: Bool,
+        message: String?,
+        activeMedicineIDs: [String] = []
+    ) -> WidgetMedicineSnapshot {
         WidgetMedicineSnapshot(
             generatedAt: now,
             takenCount: 0,
@@ -158,8 +203,19 @@ enum WidgetMedicineSnapshotWriter {
             adaptiveInsight: nil,
             hasAnyMedicines: hasAnyMedicines,
             hasMedicinesDueToday: false,
-            errorMessage: message
+            errorMessage: message,
+            activeMedicineIDs: activeMedicineIDs
         )
+    }
+
+    private static func writeSystemSnapshot(message: String) {
+        do {
+            try save(snapshot: emptySnapshot(now: .now, hasAnyMedicines: false, message: message))
+        } catch {
+            #if DEBUG
+            print("[WidgetMedicineSnapshotWriter] Failed to write system snapshot: \(error)")
+            #endif
+        }
     }
 
     private static func save(snapshot: WidgetMedicineSnapshot) throws {
@@ -167,6 +223,11 @@ enum WidgetMedicineSnapshotWriter {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(snapshot)
         try data.write(to: try snapshotURL(), options: [.atomic])
+    }
+
+    private static func loadSnapshot() throws -> WidgetMedicineSnapshot {
+        let data = try Data(contentsOf: try snapshotURL())
+        return try JSONDecoder().decode(WidgetMedicineSnapshot.self, from: data)
     }
 
     private static func snapshotURL() throws -> URL {
@@ -225,12 +286,14 @@ private struct WidgetMedicineSnapshot: Codable {
     let hasAnyMedicines: Bool
     let hasMedicinesDueToday: Bool
     let errorMessage: String?
+    let activeMedicineIDs: [String]
 }
 
 private struct WidgetMedicineSnapshotUpcoming: Codable {
     let time: String
     let name: String
     let status: String
+    let medicineID: String?
 }
 
 private struct Dose {

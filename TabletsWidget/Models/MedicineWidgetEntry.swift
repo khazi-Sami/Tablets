@@ -19,6 +19,7 @@ struct MedicineWidgetEntry: TimelineEntry {
     let hasAnyMedicines: Bool
     let hasMedicinesDueToday: Bool
     let errorMessage: String?
+    let activeMedicineIDs: [String]
 
     static let placeholder = MedicineWidgetEntry(
         date: .now,
@@ -40,7 +41,8 @@ struct MedicineWidgetEntry: TimelineEntry {
         adaptiveInsight: "You usually take this 10 mins later",
         hasAnyMedicines: true,
         hasMedicinesDueToday: true,
-        errorMessage: nil
+        errorMessage: nil,
+        activeMedicineIDs: []
     )
 }
 

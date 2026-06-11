@@ -55,7 +55,7 @@ struct TabletsMedicinesWidget: Widget {
         StaticConfiguration(kind: kind, provider: TabletsWidgetProvider()) { entry in
             MedicineWidgetView(entry: entry)
         }
-        .configurationDisplayName("Tablets Medicines")
+        .configurationDisplayName("BanyAI Medicines")
         .description("Track medicine adherence and next dose.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular])
     }

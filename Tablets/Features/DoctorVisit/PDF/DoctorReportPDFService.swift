@@ -27,10 +27,10 @@ struct DoctorReportPDFService {
 
     func generatePDF(report: DoctorReportData) throws -> URL {
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
-        let url = FileManager.default.temporaryDirectory.appending(path: "Tablets-Doctor-Report-\(UUID().uuidString).pdf")
+        let url = FileManager.default.temporaryDirectory.appending(path: "BanyAI-Doctor-Report-\(UUID().uuidString).pdf")
 
         try renderer.writePDF(to: url) { context in
-            var y = beginPage(context, title: "Tablets Doctor Report", report: report)
+            var y = beginPage(context, title: "BanyAI Doctor Report", report: report)
 
             if !report.hasClinicalData {
                 section("Report Status", y: &y)
@@ -129,7 +129,7 @@ struct DoctorReportPDFService {
 
     private func ensureSpace(_ y: inout CGFloat, context: UIGraphicsPDFRendererContext, report: DoctorReportData, needed: CGFloat = 145) {
         if y + needed > 710 {
-            y = beginPage(context, title: "Tablets Doctor Report", report: report)
+            y = beginPage(context, title: "BanyAI Doctor Report", report: report)
         }
     }
 

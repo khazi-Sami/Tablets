@@ -71,7 +71,7 @@ struct HealthCompanionBubble: View {
                         HStack(spacing: Spacing.xSmall) {
                             Image(systemName: message.tone.icon)
                                 .foregroundStyle(message.tone.color)
-                            Text("Tablets Companion")
+                            Text("BanyAI Companion")
                                 .font(AppFont.sectionTitle)
                                 .foregroundStyle(AppColor.ink)
                         }

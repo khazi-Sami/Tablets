@@ -56,7 +56,7 @@ struct AdaptiveReminderToggleCard: View {
               pattern.sampleCount >= 5,
               preferenceStore.isEnabled(medicineID: pattern.medicineID, scheduledTime: pattern.scheduledTime)
         else {
-            return "After a few doses, Tablets will learn your routine."
+            return "After a few doses, BanyAI will learn your routine."
         }
 
         let minutes = abs(pattern.averageActualMinuteOffset)
